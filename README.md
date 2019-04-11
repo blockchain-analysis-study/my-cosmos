@@ -1,4 +1,4 @@
-# Cosmos SDK
+# 本人在 Cosmos SDK diamante 基础上加的中文注释分析
 ![banner](docs/cosmos-sdk-image.png)
 
 [![version](https://img.shields.io/github/tag/cosmos/cosmos-sdk.svg)](https://my-cosmos/cosmos-sdk/releases/latest)
