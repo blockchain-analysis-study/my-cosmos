@@ -49,6 +49,7 @@ func (k Keeper) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress,
 // BeforeDelegationSharesModified - call hook if registered
 func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	if k.hooks != nil {
+		// 其实是 keeper包的hook实例的 BeforeDelegationSharesModified
 		k.hooks.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
 	}
 }

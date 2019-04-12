@@ -514,6 +514,7 @@ func (d Dec) TruncateInt64() int64 {
 }
 
 // TruncateInt truncates the decimals from the number and returns an Int
+// TruncateInt从数字中截断小数并返回Int
 func (d Dec) TruncateInt() Int {
 	return NewIntFromBigInt(chopPrecisionAndTruncateNonMutative(d.Int))
 }

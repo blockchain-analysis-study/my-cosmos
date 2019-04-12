@@ -219,12 +219,20 @@ type StoreKey interface {
 
 // KVStoreKey is used for accessing substores.
 // Only the pointer value should ever be used - it functions as a capabilities key.
+/**
+KVStoreKey用于访问 substores。
+应该只使用指针值 - 它用来做功能键。
+ */
 type KVStoreKey struct {
 	name string
 }
 
 // NewKVStoreKey returns a new pointer to a KVStoreKey.
 // Use a pointer so keys don't collide.
+/**
+NewKVStoreKey返回一个指向KVStoreKey的新指针。
+使用指针，以便键不会发生碰撞
+ */
 func NewKVStoreKey(name string) *KVStoreKey {
 	return &KVStoreKey{
 		name: name,
@@ -240,6 +248,9 @@ func (key *KVStoreKey) String() string {
 }
 
 // TransientStoreKey is used for indexing transient stores in a MultiStore
+/**
+TransientStoreKey用于索引MultiStore中的临时存储
+ */
 type TransientStoreKey struct {
 	name string
 }

@@ -41,11 +41,13 @@ type Account interface {
 }
 
 // VestingAccount defines an account type that vests coins via a vesting schedule.
+// VestingAccount定义了一种通过授权计划来换取硬币的账户类型。
 type VestingAccount interface {
 	Account
 
 	// Delegation and undelegation accounting that returns the resulting base
 	// coins amount.
+	// 授权和取消授权账户处理，返回产生的基础硬币金额。
 	TrackDelegation(blockTime time.Time, amount sdk.Coins)
 	TrackUndelegation(amount sdk.Coins)
 
@@ -246,6 +248,10 @@ func (bva BaseVestingAccount) spendableCoins(vestingCoins sdk.Coins) sdk.Coins {
 //
 // CONTRACT: The account's coins, delegation coins, vesting coins, and delegated
 // vesting coins must be sorted.
+/**
+trackDelegation：会根据当前归属的硬币数量跟踪任何给定归属帐户类型的委托金额。 它返回产生的基础硬币。
+合约：必须对帐户的硬币，代表团币，归属硬币和委托归属硬币进行分类。
+ */
 func (bva *BaseVestingAccount) trackDelegation(vestingCoins, amount sdk.Coins) {
 	bc := bva.GetCoins()
 
@@ -435,6 +441,9 @@ func (cva ContinuousVestingAccount) SpendableCoins(blockTime time.Time) sdk.Coin
 // TrackDelegation tracks a desired delegation amount by setting the appropriate
 // values for the amount of delegated vesting, delegated free, and reducing the
 // overall amount of base coins.
+/**
+TrackDelegation通过设置委托授权金额的适当值，免费委派和减少基本硬币的总金额来跟踪所需的授权金额。
+ */
 func (cva *ContinuousVestingAccount) TrackDelegation(blockTime time.Time, amount sdk.Coins) {
 	cva.trackDelegation(cva.GetVestingCoins(blockTime), amount)
 }
@@ -498,6 +507,9 @@ func (dva DelayedVestingAccount) SpendableCoins(blockTime time.Time) sdk.Coins {
 // TrackDelegation tracks a desired delegation amount by setting the appropriate
 // values for the amount of delegated vesting, delegated free, and reducing the
 // overall amount of base coins.
+/**
+TrackDelegation通过设置委托授权金额的适当值，免费委派和减少基本硬币的总金额来跟踪所需的授权金额。
+ */
 func (dva *DelayedVestingAccount) TrackDelegation(blockTime time.Time, amount sdk.Coins) {
 	dva.trackDelegation(dva.GetVestingCoins(blockTime), amount)
 }

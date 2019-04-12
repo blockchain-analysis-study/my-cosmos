@@ -79,10 +79,12 @@ func (h Hooks) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, 
 	h.k.incrementValidatorPeriod(ctx, val)
 }
 func (h Hooks) BeforeDelegationSharesModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
+	// 从存储中分别找到 验证人 和 委托人
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)
 	del := h.k.stakingKeeper.Delegation(ctx, delAddr, valAddr)
 
 	// withdraw delegation rewards (which also increments period)
+	// 退回委托奖励（也增加期限）
 	if err := h.k.withdrawDelegationRewards(ctx, val, del); err != nil {
 		panic(err)
 	}

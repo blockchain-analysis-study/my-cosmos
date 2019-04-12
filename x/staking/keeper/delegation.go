@@ -494,8 +494,11 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 	}
 
 
-
+	// 是否 减账户，标示？
+	// 是否需要扣减 发起委托的 账户地址上的金额
 	if subtractAccount {
+
+		// 这里的 bankKeeper 是 bank.NewBaseKeeper 实现的
 		_, err := k.bankKeeper.DelegateCoins(ctx, delegation.DelegatorAddress, sdk.Coins{sdk.NewCoin(k.GetParams(ctx).BondDenom, bondAmt)})
 		if err != nil {
 			return sdk.Dec{}, err
@@ -524,16 +527,19 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 }
 
 // unbond a particular delegation and perform associated store operations
+// 取消一个指定的委托人 和 写入存储中的动作 ？
 func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress,
 	shares sdk.Dec) (amount sdk.Int, err sdk.Error) {
 
 	// check if a delegation object exists in the store
+	// 检查该委托人是否存在 存储中
 	delegation, found := k.GetDelegation(ctx, delAddr, valAddr)
 	if !found {
 		return amount, types.ErrNoDelegatorForAddress(k.Codespace())
 	}
 
 	// call the before-delegation-modified hook
+	// AOP 钩子函数
 	k.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
 
 	// ensure that we have enough shares to remove
@@ -582,25 +588,43 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 }
 
 // get info for begin functions: completionTime and CreationHeight
+// 获取begin函数的信息：
+// completionTime和CreationHeight： 完成的时间 和 创建时的块高
 func (k Keeper) getBeginInfo(ctx sdk.Context, valSrcAddr sdk.ValAddress) (
 	completionTime time.Time, height int64, completeNow bool) {
 
+
+	// 根据 验证人地址获取 验证人
 	validator, found := k.GetValidator(ctx, valSrcAddr)
 
 	switch {
 	// TODO: when would the validator not be found?
+	// 什么时候会找不到验证人？？
+	// 当验证人找不到 或者 该验证人被锁定时
 	case !found || validator.Status == sdk.Bonded:
 
 		// the longest wait - just unbonding period from now
+		// 最长的等待 - 从现在开始进入解锁周期
+		// 当前区块的时间戳 + 解锁的时间
 		completionTime = ctx.BlockHeader().Time.Add(k.UnbondingTime(ctx))
+		// 当前 块高
 		height = ctx.BlockHeight()
 		return completionTime, height, false
 
+	/**
+	如果当前验证人为 未被锁定状态
+	 */
 	case validator.Status == sdk.Unbonded:
+		// 直接返回入参的 当前完成时间和块高, 及 是否是现在完成的标识位 true
 		return completionTime, height, true
 
+	/**
+	如果 当前验证人为 解锁状态
+	 */
 	case validator.Status == sdk.Unbonding:
+		// 使用验证人的 解锁更新时间作为 完成时间
 		completionTime = validator.UnbondingCompletionTime
+		// 使用验证人的 解锁块高作为 解锁块高
 		height = validator.UnbondingHeight
 		return completionTime, height, false
 
@@ -610,12 +634,15 @@ func (k Keeper) getBeginInfo(ctx sdk.Context, valSrcAddr sdk.ValAddress) (
 }
 
 // begin unbonding part or all of a delegation
+// 开始解除部分或全部全部的委托
 func (k Keeper) Undelegate(ctx sdk.Context, delAddr sdk.AccAddress,
 	valAddr sdk.ValAddress, sharesAmount sdk.Dec) (completionTime time.Time, sdkErr sdk.Error) {
 
 	// create the unbonding delegation
+	// 创建 解锁的委托信息
 	completionTime, height, completeNow := k.getBeginInfo(ctx, valAddr)
 
+	// 更新 全局的Keeper 管理器的信息
 	returnAmount, err := k.unbond(ctx, delAddr, valAddr, sharesAmount)
 	if err != nil {
 		return completionTime, err

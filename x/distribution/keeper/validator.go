@@ -22,41 +22,63 @@ func (k Keeper) initializeValidator(ctx sdk.Context, val sdk.Validator) {
 }
 
 // increment validator period, returning the period just ended
+// 增量验证人周期，返回刚刚结束的周期
 func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uint64 {
 	// fetch current rewards
+	// 获取当前奖励
 	rewards := k.GetValidatorCurrentRewards(ctx, val.GetOperator())
 
 	// calculate current ratio
+	// 计算流通比率
 	var current sdk.DecCoins
+
+	// 如果当前 验证人被质押的 token 为 0
 	if val.GetTokens().IsZero() {
 
 		// can't calculate ratio for zero-token validators
 		// ergo we instead add to the community pool
+		// 无法计算0 token 的验证人的比率
+		// 我们改为添加到社区池
 		feePool := k.GetFeePool(ctx)
+
+		// 获取 验证人的优秀奖励 ？？ 这个是什么鬼？ (应该是指： 出块奖励吧？)
 		outstanding := k.GetValidatorOutstandingRewards(ctx, val.GetOperator())
+
+		// 将当前生成的奖励追加到 尚未花费的社区资金池
 		feePool.CommunityPool = feePool.CommunityPool.Add(rewards.Rewards)
+
+		// 扣减吊验证人的 优秀奖励？ (我的理解是: 优秀奖励是不是指, 本来应该奖励给 验证人的出块奖励??)
 		outstanding = outstanding.Sub(rewards.Rewards)
+
+		// 分别更新
 		k.SetFeePool(ctx, feePool)
 		k.SetValidatorOutstandingRewards(ctx, val.GetOperator(), outstanding)
 
+		// 实例化了一个空的 当时流通coins ？
 		current = sdk.DecCoins{}
 	} else {
 		// note: necessary to truncate so we don't allow withdrawing more rewards than owed
+		// 注意: 截断是必要的，所以我们不允许撤回比欠款更多的奖励
 		current = rewards.Rewards.QuoDecTruncate(val.GetTokens().ToDec())
 	}
 
 	// fetch historical rewards for last period
+	// 获取当前 验证人的上一期的历史奖励
 	historical := k.GetValidatorHistoricalRewards(ctx, val.GetOperator(), rewards.Period-1).CumulativeRewardRatio
 
 	// decrement reference count
+	// 减少参考计数 （我一直想知道 参考计数 是做什么的？）
 	k.decrementReferenceCount(ctx, val.GetOperator(), rewards.Period-1)
 
 	// set new historical rewards with reference count of 1
+	// 设置参考计数为1的新历史奖励
 	k.SetValidatorHistoricalRewards(ctx, val.GetOperator(), rewards.Period, types.NewValidatorHistoricalRewards(historical.Add(current), 1))
 
 	// set current rewards, incrementing period by 1
+	// 设置当前奖励，递增1
 	k.SetValidatorCurrentRewards(ctx, val.GetOperator(), types.NewValidatorCurrentRewards(sdk.DecCoins{}, rewards.Period+1))
 
+	// 返回当前奖励 周期
 	return rewards.Period
 }
 
@@ -71,15 +93,21 @@ func (k Keeper) incrementReferenceCount(ctx sdk.Context, valAddr sdk.ValAddress,
 }
 
 // decrement the reference count for a historical rewards value, and delete if zero references remain
+// 递减历史奖励值中的引用计数，如果保留零引用则删除
 func (k Keeper) decrementReferenceCount(ctx sdk.Context, valAddr sdk.ValAddress, period uint64) {
+	// 由存储中获取 当前 验证人指定周期的历史奖励
 	historical := k.GetValidatorHistoricalRewards(ctx, valAddr, period)
 	if historical.ReferenceCount == 0 {
 		panic("cannot set negative reference count")
 	}
+	// 递减
 	historical.ReferenceCount--
+
+	// 如果参考技术 == 0, 则直接删除 历史奖励信息
 	if historical.ReferenceCount == 0 {
 		k.DeleteValidatorHistoricalReward(ctx, valAddr, period)
 	} else {
+		// 否则设置 递减之后的 历史奖励信息
 		k.SetValidatorHistoricalRewards(ctx, valAddr, period, historical)
 	}
 }

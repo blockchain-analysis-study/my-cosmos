@@ -42,6 +42,7 @@ func (k Keeper) IterateDelegatorWithdrawAddrs(ctx sdk.Context, handler func(del 
 }
 
 // get the global fee pool distribution info
+// 获取全局的费用池分配信息
 func (k Keeper) GetFeePool(ctx sdk.Context) (feePool types.FeePool) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(FeePoolKey)
@@ -78,6 +79,7 @@ func (k Keeper) SetPreviousProposerConsAddr(ctx sdk.Context, consAddr sdk.ConsAd
 }
 
 // get the starting info associated with a delegator
+// 获取与委托人相关的起始信息
 func (k Keeper) GetDelegatorStartingInfo(ctx sdk.Context, val sdk.ValAddress, del sdk.AccAddress) (period types.DelegatorStartingInfo) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(GetDelegatorStartingInfoKey(val, del))
@@ -120,6 +122,7 @@ func (k Keeper) IterateDelegatorStartingInfos(ctx sdk.Context, handler func(val 
 }
 
 // get historical rewards for a particular period
+// 获得特定时期的历史奖励
 func (k Keeper) GetValidatorHistoricalRewards(ctx sdk.Context, val sdk.ValAddress, period uint64) (rewards types.ValidatorHistoricalRewards) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(GetValidatorHistoricalRewardsKey(val, period))
@@ -264,6 +267,7 @@ func (k Keeper) IterateValidatorAccumulatedCommissions(ctx sdk.Context, handler 
 }
 
 // get validator outstanding rewards
+// 获得验证人优秀奖励 ??
 func (k Keeper) GetValidatorOutstandingRewards(ctx sdk.Context, val sdk.ValAddress) (rewards types.ValidatorOutstandingRewards) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(GetValidatorOutstandingRewardsKey(val))
@@ -272,6 +276,7 @@ func (k Keeper) GetValidatorOutstandingRewards(ctx sdk.Context, val sdk.ValAddre
 }
 
 // set validator outstanding rewards
+// 设置 验证人的出块奖励
 func (k Keeper) SetValidatorOutstandingRewards(ctx sdk.Context, val sdk.ValAddress, rewards types.ValidatorOutstandingRewards) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshalBinaryLengthPrefixed(rewards)

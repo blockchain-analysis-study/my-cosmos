@@ -114,6 +114,8 @@ func NewValidator(operator sdk.ValAddress, pubKey crypto.PubKey, description Des
 		OperatorAddress:         operator,
 		ConsPubKey:              pubKey,
 		Jailed:                  false,
+
+		// 初始值为, 未被锁定
 		Status:                  sdk.Unbonded,
 		Tokens:                  sdk.ZeroInt(),
 		DelegatorShares:         sdk.ZeroDec(),

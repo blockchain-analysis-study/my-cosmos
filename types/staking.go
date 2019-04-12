@@ -12,11 +12,17 @@ type BondStatus byte
 
 // staking constants
 const (
+	/**
+	Unbonded: 未被绑定
+	Unbonding: 解除绑定
+	Bonded:	被绑定
+	 */
 	Unbonded  BondStatus = 0x00
 	Unbonding BondStatus = 0x01
 	Bonded    BondStatus = 0x02
 
 	// default bond denomination
+	// 默认 锁定面额 ？？
 	DefaultBondDenom = "stake"
 
 	// Delay, in blocks, between when validator updates are returned to Tendermint and when they are applied.
@@ -24,6 +30,14 @@ const (
 	// if this is 1, the validator set at the end of a block will sign the block after the next.
 	// Constant as this should not change without a hard fork.
 	// TODO: Link to some Tendermint docs, this is very unobvious.
+	/**
+	发生延迟! 在一个block中, 处于当验证人被返回到Tendermint时更新及它们被应用的时候.
+	例如, 如果为 0, 则在Block执行结束处设置的验证人(集合)将对下一个块进行签名.
+	或者如果为 1,则在Block执行结束时设置的验证人(集合)将在下一个块之后的一个块进行签名.
+	如果内有分叉, 那么这个值不会被改变.
+
+	TODO: 链接到一些Tendermint文档，这是非常不明显的.
+	 */
 	ValidatorUpdateDelay int64 = 1
 )
 

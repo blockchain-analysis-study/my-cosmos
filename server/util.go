@@ -168,6 +168,7 @@ func AddCommands(
 
 	// 也是各种注册命令组件
 	rootCmd.AddCommand(
+		// 添加 GaiaApp 启动回调函数
 		StartCmd(ctx, appCreator),
 		UnsafeResetAllCmd(ctx),
 		client.LineBreak,

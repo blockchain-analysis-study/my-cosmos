@@ -7,7 +7,9 @@ import (
 )
 
 // global fee pool for distribution
+// 全局的佣金分配池？
 type FeePool struct {
+	// 尚未花费的社区资金池
 	CommunityPool sdk.DecCoins `json:"community_pool"` // pool for community funds yet to be spent
 }
 

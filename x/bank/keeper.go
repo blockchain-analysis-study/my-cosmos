@@ -26,6 +26,7 @@ type Keeper interface {
 }
 
 // BaseKeeper manages transfers between accounts. It implements the Keeper interface.
+// BaseKeeper管理帐户之间的转移。 它实现了Keeper接口。
 type BaseKeeper struct {
 	BaseSendKeeper
 
@@ -90,13 +91,21 @@ func (keeper BaseKeeper) InputOutputCoins(
 // DelegateCoins performs delegation by deducting amt coins from an account with
 // address addr. For vesting accounts, delegations amounts are tracked for both
 // vesting and vested coins.
+/**
+DelegateCoins通过从地址为addr的帐户中扣除 目标硬币来执行委托。
+对于授权账户，所委托的数量是被可通过授权及授权的代币追溯的
+ */
 func (keeper BaseKeeper) DelegateCoins(
 	ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins,
 ) (sdk.Tags, sdk.Error) {
 
+
+	// 先判断入参的 coins是否可用
 	if !amt.IsValid() {
 		return nil, sdk.ErrInvalidCoins(amt.String())
 	}
+
+	// 更新发起委托的账户信息
 	return delegateCoins(ctx, keeper.ak, addr, amt)
 }
 
@@ -129,6 +138,7 @@ var _ SendKeeper = (*BaseSendKeeper)(nil)
 
 // BaseSendKeeper only allows transfers between accounts without the possibility of
 // creating coins. It implements the SendKeeper interface.
+// BaseSendKeeper仅允许在帐户之间进行转帐，而无法创建硬币。 它实现了SendKeeper接口。
 type BaseSendKeeper struct {
 	BaseViewKeeper
 
@@ -183,6 +193,7 @@ type ViewKeeper interface {
 }
 
 // BaseViewKeeper implements a read only keeper implementation of ViewKeeper.
+// BaseViewKeeper 实现了ViewKeeper的只读 keeper 的实现。
 type BaseViewKeeper struct {
 	ak        auth.AccountKeeper
 	codespace sdk.CodespaceType
@@ -356,17 +367,23 @@ func delegateCoins(
 	ctx sdk.Context, ak auth.AccountKeeper, addr sdk.AccAddress, amt sdk.Coins,
 ) (sdk.Tags, sdk.Error) {
 
+
+	// 判断coins是否可用？
 	if !amt.IsValid() {
 		return nil, sdk.ErrInvalidCoins(amt.String())
 	}
 
+	// 根据入参的地址(一般就是发起委托的地址), 获取该账户的信息
+	// acc 是一个指针的接口引用
 	acc := getAccount(ctx, ak, addr)
 	if acc == nil {
 		return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", addr))
 	}
 
+	// 获取该账户上原来的钱
 	oldCoins := acc.GetCoins()
 
+	// 先做一步相减判断
 	_, hasNeg := oldCoins.SafeSub(amt)
 	if hasNeg {
 		return nil, sdk.ErrInsufficientCoins(
@@ -374,10 +391,12 @@ func delegateCoins(
 		)
 	}
 
+	// 记录下旧信息,使之变为可追溯的
 	if err := trackDelegation(acc, ctx.BlockHeader().Time, amt); err != nil {
 		return nil, sdk.ErrInternal(fmt.Sprintf("failed to track delegation: %v", err))
 	}
 
+	// 将该账户存储起来
 	setAccount(ctx, ak, acc)
 
 	return sdk.NewTags(
@@ -412,13 +431,16 @@ func undelegateCoins(
 }
 
 // CONTRACT: assumes that amt is valid.
+// 合约：假设amt有效。
 func trackDelegation(acc auth.Account, blockTime time.Time, amt sdk.Coins) error {
 	vacc, ok := acc.(auth.VestingAccount)
 	if ok {
+		// 授权和取消授权账户处理，返回产生的基础硬币金额。
 		vacc.TrackDelegation(blockTime, amt)
 		return nil
 	}
 
+	// 真正的去扣减该账户上的钱, 并设置到账户实体中
 	return acc.SetCoins(acc.GetCoins().Sub(amt))
 }
 

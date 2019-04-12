@@ -17,18 +17,27 @@ const aminoCacheSize = 500
 经济模型的 管理器 (这个东西是全局的)
  */
 type Keeper struct {
+
+	// DB 类型的 key？
 	storeKey           sdk.StoreKey
 	storeTKey          sdk.StoreKey
+
+	// 编码解码器
 	cdc                *codec.Codec
+
+	// 这个是管理账户的资产转移的管理器 ??
 	bankKeeper         types.BankKeeper
 
 	// 钩子的定义 (AOP一样的存在
 	hooks              sdk.StakingHooks
+
+	// 一个参数仓库？
 	paramstore         params.Subspace
+
+	/** TODO 下面这两个全局缓存用来，缓存验证人的 **/
 
 	/** 全局保存的见证人 缓存 */
 	validatorCache     map[string]cachedValidator
-
 	// 一个go拓展库，list库
 	// 这里用来存储 验证人列表
 	validatorCacheList *list.List

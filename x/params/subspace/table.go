@@ -9,6 +9,7 @@ type attribute struct {
 }
 
 // KeyTable subspaces appropriate type for each parameter key
+// KeyTable子空间为每个参数键的适当类型
 type KeyTable struct {
 	m map[string]attribute
 }

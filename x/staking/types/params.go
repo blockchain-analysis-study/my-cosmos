@@ -24,22 +24,34 @@ const (
 )
 
 // nolint - Keys for parameter access
+// 参数访问的键
 var (
+	// 各个键的类型
 	KeyUnbondingTime = []byte("UnbondingTime")
 	KeyMaxValidators = []byte("MaxValidators")
 	KeyMaxEntries    = []byte("KeyMaxEntries")
 	KeyBondDenom     = []byte("BondDenom")
 )
 
+/**
+TODO 这个是干嘛用的啊？
+ */
 var _ params.ParamSet = (*Params)(nil)
 
 // Params defines the high level settings for staking
 // Params定义了经济模型的高阶配置
 type Params struct {
+
+	// 解锁时长
 	UnbondingTime time.Duration `json:"unbonding_time"` // time duration of unbonding
+
+	// 最大验证人数量（max uint16 = 65535）
 	MaxValidators uint16        `json:"max_validators"` // maximum number of validators (max uint16 = 65535)
+
+	// 无绑定委托或重新委托的最大条目（单个 一对/三重奏）
 	MaxEntries    uint16        `json:"max_entries"`    // max entries for either unbonding delegation or redelegation (per pair/trio)
 	// note: we need to be a bit careful about potential overflow here, since this is user-determined
+	// 注意：我们需要对这里的潜在溢出有点小心，因为这是由用户决定的
 
 	// 质押的币面额
 	BondDenom string `json:"bond_denom"` // bondable coin denomination

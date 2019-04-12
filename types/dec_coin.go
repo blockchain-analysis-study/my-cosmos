@@ -13,8 +13,11 @@ import (
 // Decimal Coin
 
 // Coins which can have additional decimal points
+// 可以有额外小数点的硬币
 type DecCoin struct {
+	// 面额
 	Denom  string `json:"denom"`
+	// 数量
 	Amount Dec    `json:"amount"`
 }
 
@@ -115,7 +118,9 @@ func (coin DecCoin) Sub(coinB DecCoin) DecCoin {
 }
 
 // return the decimal coins with trunctated decimals, and return the change
+// 返回带有trunctated小数的十进制硬币，并返回更改
 func (coin DecCoin) TruncateDecimal() (Coin, DecCoin) {
+	// TruncateInt从数字中截断小数并返回Int
 	truncated := coin.Amount.TruncateInt()
 	change := coin.Amount.Sub(truncated.ToDec())
 	return NewCoin(coin.Denom, truncated), DecCoin{coin.Denom, change}
@@ -172,13 +177,17 @@ func (coins DecCoins) String() string {
 
 // TruncateDecimal returns the coins with truncated decimals and returns the
 // change.
+// TruncateDecimal返回带有截断小数的硬币并返回更改。
 func (coins DecCoins) TruncateDecimal() (Coins, DecCoins) {
 	changeSum := DecCoins{}
 	out := make(Coins, len(coins))
 
 	for i, coin := range coins {
+
+		// 返回一个取整的coin 和 被切断后的小数 decCoin
 		truncated, change := coin.TruncateDecimal()
 		out[i] = truncated
+		// 叠加所有小数
 		changeSum = changeSum.Add(DecCoins{change})
 	}
 
@@ -283,15 +292,28 @@ func (coins DecCoins) SafeSub(coinsB DecCoins) (DecCoins, bool) {
 // to both `coins` and `coinsB` the minimum is considered to be 0, thus they
 // are not added to the final set.In other words, trim any denom amount from
 // coin which exceeds that of coinB, such that (coin.Intersect(coinB)).IsLTE(coinB).
+/**
+Intersect:  【求交集】
+将返回一组新的硬币，其中包含在“coins”和“coinsB”中找到的常见 面额 的最小DecCoin。
+对于“coins”和“coinsb”都不常见的 面额s，最小值被认为是0。
+因此，它们不会被添加到最终的集合中。
+换句话说，从硬币中剔除任何超过了硬币B的 面额值，这样（coin.Intersect（coinB））。IsLTE（coinB）
+ */
 func (coins DecCoins) Intersect(coinsB DecCoins) DecCoins {
 	res := make([]DecCoin, len(coins))
+
+	// 先遍历 coins
+	// 逐个和 入参的 coinB对比
 	for i, coin := range coins {
 		minCoin := DecCoin{
+			// coin的面额
 			Denom:  coin.Denom,
+			// coin的数量
 			Amount: MinDec(coin.Amount, coinsB.AmountOf(coin.Denom)),
 		}
 		res[i] = minCoin
 	}
+	// 清除掉 0 值的
 	return removeZeroDecCoins(res)
 }
 
@@ -368,9 +390,13 @@ func (coins DecCoins) Empty() bool {
 }
 
 // returns the amount of a denom from deccoins
+// 从deccoins返回 面额所对应的 币数的数额
 func (coins DecCoins) AmountOf(denom string) Dec {
+
+	// 先确保 入参的 数额可用
 	mustValidateDenom(denom)
 
+	// 根据当前 coins的数量长度, 做相应的操作
 	switch len(coins) {
 	case 0:
 		return ZeroDec()
@@ -383,9 +409,12 @@ func (coins DecCoins) AmountOf(denom string) Dec {
 		return ZeroDec()
 
 	default:
+		// 先取, 数组中间的
+		// 递归查找最小的
 		midIdx := len(coins) / 2 // 2:1, 3:1, 4:2
 		coin := coins[midIdx]
 
+		// 一直找到, 面额一样的, 就返回当前coin的数量
 		if denom < coin.Denom {
 			return coins[:midIdx].AmountOf(denom)
 		} else if denom == coin.Denom {

@@ -46,9 +46,13 @@ func (k Keeper) BondDenom(ctx sdk.Context) (res string) {
 // Get all parameteras as types.Params
 func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return types.NewParams(
+		// 获取 解锁时长
 		k.UnbondingTime(ctx),
+		// 获取最大验证人数量
 		k.MaxValidators(ctx),
+		// 获取无绑定委托或者重新委托的最大条目
 		k.MaxEntries(ctx),
+		// 质押的金额
 		k.BondDenom(ctx),
 	)
 }

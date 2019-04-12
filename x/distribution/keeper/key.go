@@ -12,6 +12,7 @@ const (
 )
 
 // keys
+// 一些超级有用的 key
 var (
 	FeePoolKey                        = []byte{0x00} // key for global distribution state
 	ProposerKey                       = []byte{0x01} // key for the proposer operator address

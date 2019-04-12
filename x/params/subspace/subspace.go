@@ -21,14 +21,21 @@ const (
 // Transient store persists for a block, so we use it for
 // recording whether the parameter has been changed or not
 /**
-每个 keeper管理器 瞬态存储的单个参数存储都会持续存储，因此我们使用它来记录参数是否已更改
+
+
+在每个块中的每个keeper 的单个存储
+所以我们用它来记录参数是否已经改变
+
+
  */
 type Subspace struct {
 	cdc  *codec.Codec
+
+	// 这个是保存
 	key  sdk.StoreKey // []byte -> []byte, stores parameter
 	tkey sdk.StoreKey // []byte -> bool, stores parameter change
 
-	name []byte
+	name []byte     // key name ??
 
 	table KeyTable
 }
@@ -93,9 +100,14 @@ func concatKeys(key, subkey []byte) (res []byte) {
 }
 
 // Get parameter from store
+// 从 存储中获取参数
 func (s Subspace) Get(ctx sdk.Context, key []byte, ptr interface{}) {
+	// 先返回 存储类型
 	store := s.kvStore(ctx)
+	// 从当前存储类型中 根据 key 获取对应的 value
 	bz := store.Get(key)
+
+	// 把 反序列后的值附到 ptr上
 	err := s.cdc.UnmarshalJSON(bz, ptr)
 	if err != nil {
 		panic(err)

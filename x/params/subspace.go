@@ -9,9 +9,15 @@ import (
 )
 
 // re-export types from subspace
+// 从子空间重新导出类型 ?
 type (
+	// 参数仓库？
 	Subspace         = subspace.Subspace
+
+	// 只读仓库？
 	ReadOnlySubspace = subspace.ReadOnlySubspace
+
+	//
 	ParamSet         = subspace.ParamSet
 	ParamSetPairs    = subspace.ParamSetPairs
 	KeyTable         = subspace.KeyTable

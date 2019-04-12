@@ -18,8 +18,20 @@ import (
 //    number of outstanding delegations which ended the associated period (and might need to read that record)
 //  + number of slashes which ended the associated period (and might need to read that record)
 //  + one per validator for the zeroeth period, set on initialization
+/**
+
+验证人的历史奖励
+height 是隐含在 存储key中
+累积奖励比率是零周期到当前(奖励/token)周期的总和
+参考计数表明，可能需要在任何点引用此历史条目的对象数。
+
+参考计数 = 在期间结束后的优秀委托人数量(中选委托人？)（可能需要阅读该记录） + 在期间结束后的削减数量 (什么是削减啊? 都削减些什么啊?) + 在零周期的每个验证器, 即在初始化时设置
+
+ */
 type ValidatorHistoricalRewards struct {
+	// 验证人的累积奖励
 	CumulativeRewardRatio sdk.DecCoins `json:"cumulative_reward_ratio"`
+	// 参考计数 (做什么的？？)
 	ReferenceCount        uint16       `json:"reference_count"`
 }
 
@@ -34,8 +46,13 @@ func NewValidatorHistoricalRewards(cumulativeRewardRatio sdk.DecCoins, reference
 // current rewards and current period for a validator
 // kept as a running counter and incremented each block
 // as long as the validator's tokens remain constant
+/**
+只要验证人的token保持不变, 验证人的当前奖励和当前周期将在每个递增的块中持续保持不变
+ */
 type ValidatorCurrentRewards struct {
+	// 验证人的当前奖励
 	Rewards sdk.DecCoins `json:"rewards"` // current rewards
+	// 验证人的当前周期
 	Period  uint64       `json:"period"`  // current period
 }
 

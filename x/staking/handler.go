@@ -299,10 +299,13 @@ func handleMsgDelegate(ctx sdk.Context, msg types.MsgDelegate, k keeper.Keeper) 
 		return ErrNoValidatorFound(k.Codespace()).Result()
 	}
 
+	// 如果当前入参的委托的coin的面额 不等于当前 keeper 管理器中记录的 coin 的面额
 	if msg.Value.Denom != k.GetParams(ctx).BondDenom {
 		return ErrBadDenom(k.Codespace()).Result()
 	}
 
+
+	// 处理 委托相关
 	_, err := k.Delegate(ctx, msg.DelegatorAddress, msg.Value.Amount, validator, true)
 	if err != nil {
 		return err.Result()
@@ -318,6 +321,12 @@ func handleMsgDelegate(ctx sdk.Context, msg types.MsgDelegate, k keeper.Keeper) 
 	}
 }
 
+
+/**
+###########
+解除一个委托
+###########
+*/
 func handleMsgUndelegate(ctx sdk.Context, msg types.MsgUndelegate, k keeper.Keeper) sdk.Result {
 	completionTime, err := k.Undelegate(ctx, msg.DelegatorAddress, msg.ValidatorAddress, msg.SharesAmount)
 	if err != nil {
