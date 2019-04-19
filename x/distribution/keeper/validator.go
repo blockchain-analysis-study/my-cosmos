@@ -23,9 +23,11 @@ func (k Keeper) initializeValidator(ctx sdk.Context, val sdk.Validator) {
 
 // increment validator period, returning the period just ended
 // 增量验证人周期，返回刚刚结束的周期
+//
+// 这里除了处理 验证人的周期之外，还调整了验证人的出块奖励金额等等
 func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uint64 {
 	// fetch current rewards
-	// 获取当前奖励
+	// 获取验证人当前奖励
 	rewards := k.GetValidatorCurrentRewards(ctx, val.GetOperator())
 
 	// calculate current ratio
@@ -33,6 +35,7 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 	var current sdk.DecCoins
 
 	// 如果当前 验证人被质押的 token 为 0
+	// 则，修复要证人该得的钱，转到 社区奖励池中
 	if val.GetTokens().IsZero() {
 
 		// can't calculate ratio for zero-token validators
@@ -59,6 +62,7 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 	} else {
 		// note: necessary to truncate so we don't allow withdrawing more rewards than owed
 		// 注意: 截断是必要的，所以我们不允许撤回比欠款更多的奖励
+		// 直接截掉小数位
 		current = rewards.Rewards.QuoDecTruncate(val.GetTokens().ToDec())
 	}
 
@@ -72,10 +76,13 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 
 	// set new historical rewards with reference count of 1
 	// 设置参考计数为1的新历史奖励
+	// 用以前的历史奖励 + 当前奖励
+	// 即：设置新的历史出块奖励
 	k.SetValidatorHistoricalRewards(ctx, val.GetOperator(), rewards.Period, types.NewValidatorHistoricalRewards(historical.Add(current), 1))
 
 	// set current rewards, incrementing period by 1
 	// 设置当前奖励，递增1
+	// 预先设置下一个周期的 奖励, 这里先预置为 空
 	k.SetValidatorCurrentRewards(ctx, val.GetOperator(), types.NewValidatorCurrentRewards(sdk.DecCoins{}, rewards.Period+1))
 
 	// 返回当前奖励 周期
@@ -83,6 +90,7 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 }
 
 // increment the reference count for a historical rewards value
+// 增加历史奖励值的引用计数
 func (k Keeper) incrementReferenceCount(ctx sdk.Context, valAddr sdk.ValAddress, period uint64) {
 	historical := k.GetValidatorHistoricalRewards(ctx, valAddr, period)
 	if historical.ReferenceCount > 2 {

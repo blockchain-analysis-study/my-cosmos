@@ -178,6 +178,8 @@ func (k Keeper) AddValidatorTokensAndShares(ctx sdk.Context, validator types.Val
 }
 
 // Update the tokens of an existing validator, update the validators power index key
+// 更新当前 验证人身上的钱
+// 更新当前验证人的权重索引信息
 func (k Keeper) RemoveValidatorTokensAndShares(ctx sdk.Context, validator types.Validator,
 	sharesToRemove sdk.Dec) (valOut types.Validator, removedTokens sdk.Int) {
 

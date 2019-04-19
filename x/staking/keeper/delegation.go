@@ -483,12 +483,19 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 
 	// call the appropriate hook if present
 	// 调用对应的钩子函数
+	// 如果找得到，那么是 修改委托
 	if found {
 
 		// 其实是调用app包的, BeforeDelegationSharesModified 函数
+		// TODO 这一步超级重要， 里面处理的逻辑非常多
+		// ################
+		// ################
+		// 这个函数主要处理的是  withdrawDelegationRewards
+		// 退回委托奖励
+		// TODO 对于发起一个委托来说，就是先要解除之前委托的奖励，重置委托
 		k.BeforeDelegationSharesModified(ctx, delAddr, validator.OperatorAddress)
 	} else {
-
+		// 如果找不到，那么就是首次委托
 		// 其实是调用app包的, BeforeDelegationCreated 函数
 		k.BeforeDelegationCreated(ctx, delAddr, validator.OperatorAddress)
 	}
@@ -516,11 +523,12 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 
 	// Update delegation
 	delegation.Shares = delegation.Shares.Add(newShares)
-	// 重新设置 委托人
+	// todo 设置 委托信息
 	k.SetDelegation(ctx, delegation)
 
 	// Call the after-modification hook
 	// 其实是调用 app包的, BeforeDelegationCreated 函数
+	// 其实里头最终只做了一件事, 初始化 委托起始信息
 	k.AfterDelegationModified(ctx, delegation.DelegatorAddress, delegation.ValidatorAddress)
 
 	return newShares, nil
@@ -540,50 +548,75 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 
 	// call the before-delegation-modified hook
 	// AOP 钩子函数
+	// ###############
+	// ###############
+	// ###############
+	// TODO 这个是更新委托人相关的函数， 非常重要的一步，逻辑非常多
+	// 这个函数主要处理的是  withdrawDelegationRewards
 	k.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
 
 	// ensure that we have enough shares to remove
+	// 确保之前委托的钱不比当前解除委托入参的钱小
+	// 不能导致 多退
 	if delegation.Shares.LT(shares) {
 		return amount, types.ErrNotEnoughDelegationShares(k.Codespace(), delegation.Shares.String())
 	}
 
 	// get validator
+	// 看看有没有验证人
+	// 验证人都找不到，说明数据有毒啊
+	// 那就不能解除委托
 	validator, found := k.GetValidator(ctx, valAddr)
 	if !found {
 		return amount, types.ErrNoValidatorFound(k.Codespace())
 	}
 
 	// subtract shares from delegation
+	// 减持委托的钱
 	delegation.Shares = delegation.Shares.Sub(shares)
 
 	isValidatorOperator := bytes.Equal(delegation.DelegatorAddress, validator.OperatorAddress)
 
 	// if the delegation is the operator of the validator and undelegating will decrease the validator's self delegation below their minimum
 	// trigger a jail validator
+	//
+	// 如果委托人地址就是是验证人地址，并且解除委托的钱会将验证者的自我委托减少到最小的质押限制？
 	if isValidatorOperator && !validator.Jailed &&
+		// 如果减持后的钱小于 质押的最小门槛
 		validator.ShareTokens(delegation.Shares).TruncateInt().LT(validator.MinSelfDelegation) {
 
+		// 封闭掉 验证人？？
 		k.jailValidator(ctx, validator)
+
+		// 获取验证人 信息
 		validator = k.mustGetValidator(ctx, validator.OperatorAddress)
 	}
 
 	// remove the delegation
+	// 如果当前委托人的委托的钱为 0, 则需要删除当前委托人信息
 	if delegation.Shares.IsZero() {
 		k.RemoveDelegation(ctx, delegation)
 	} else {
+		// 否则设置减持操作之后的当前委托人
 		k.SetDelegation(ctx, delegation)
 		// call the after delegation modification hook
+		// 其实就是：初始化新委托的起始信息
 		k.AfterDelegationModified(ctx, delegation.DelegatorAddress, delegation.ValidatorAddress)
 	}
 
 	// remove the shares and coins from the validator
+	// 同时减少 验证人信息中的委托信息
 	validator, amount = k.RemoveValidatorTokensAndShares(ctx, validator, shares)
 
+	// 如果当前扣减完 委托金之后的验证人上的委托金额等于0 且 当前验证人属于 【未被绑定】 状态
 	if validator.DelegatorShares.IsZero() && validator.Status == sdk.Unbonded {
 		// if not unbonded, we must instead remove validator in EndBlocker once it finishes its unbonding period
+		// 如果没有未绑定，一旦完成其未绑定期，我们必须在EndBlocker (区块处理完时)中删除验证器
 		k.RemoveValidator(ctx, validator.OperatorAddress)
 	}
 
+
+	// 返回 验证人身上剩余的 token
 	return amount, nil
 }
 
@@ -635,18 +668,24 @@ func (k Keeper) getBeginInfo(ctx sdk.Context, valSrcAddr sdk.ValAddress) (
 
 // begin unbonding part or all of a delegation
 // 开始解除部分或全部全部的委托
+// TODO 超级重要的一步
 func (k Keeper) Undelegate(ctx sdk.Context, delAddr sdk.AccAddress,
 	valAddr sdk.ValAddress, sharesAmount sdk.Dec) (completionTime time.Time, sdkErr sdk.Error) {
 
 	// create the unbonding delegation
 	// 创建 解锁的委托信息
+	// 获得验证人的 unbonding的completionTime和CreationHeight： 完成的时间 和 创建时的块高
 	completionTime, height, completeNow := k.getBeginInfo(ctx, valAddr)
 
 	// 更新 全局的Keeper 管理器的信息
+	// 减持当前 sharesAmount 数额的委托金
+	// returnAmount： 验证人身上剩余的 token
 	returnAmount, err := k.unbond(ctx, delAddr, valAddr, sharesAmount)
 	if err != nil {
 		return completionTime, err
 	}
+
+	// 根据验证人身上剩余的 token 创建一个 coin实例
 	balance := sdk.NewCoin(k.BondDenom(ctx), returnAmount)
 
 	// no need to create the ubd object just complete now

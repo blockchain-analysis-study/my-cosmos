@@ -485,7 +485,9 @@ func (v Validator) InvalidExRate() bool {
 }
 
 // calculate the token worth of provided shares
+// 计算入参的数额的代币价值
 func (v Validator) ShareTokens(shares sdk.Dec) sdk.Dec {
+	// money × 总质押的钱 / 总委托的钱
 	return (shares.MulInt(v.Tokens)).Quo(v.DelegatorShares)
 }
 

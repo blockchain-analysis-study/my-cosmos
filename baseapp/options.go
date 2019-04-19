@@ -14,11 +14,13 @@ import (
 // for options that need access to non-exported fields of the BaseApp
 
 // SetPruning sets a pruning option on the multistore associated with the app
+// Setpruning: 在与应用程序关联的多存储上设置一个修剪选项
 func SetPruning(opts sdk.PruningOptions) func(*BaseApp) {
 	return func(bap *BaseApp) { bap.cms.SetPruning(opts) }
 }
 
 // SetMinGasPrices returns an option that sets the minimum gas prices on the app.
+// Setmingasprices: 返回在应用程序上设置最低天然气价格的选项.
 func SetMinGasPrices(gasPricesStr string) func(*BaseApp) {
 	gasPrices, err := sdk.ParseDecCoins(gasPricesStr)
 	if err != nil {

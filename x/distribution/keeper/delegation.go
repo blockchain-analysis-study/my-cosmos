@@ -9,11 +9,17 @@ import (
 )
 
 // initialize starting info for a new delegation
+// 初始化新委托的起始信息
 func (k Keeper) initializeDelegation(ctx sdk.Context, val sdk.ValAddress, del sdk.AccAddress) {
 	// period has already been incremented - we want to store the period ended by this delegation action
+	// 期间已经增加 - 我们希望存储此委托行动结束的期间
+	// 因为在之前的  k.BeforeDelegationSharesModified(ctx, delAddr, validator.OperatorAddress)
+	// 或者 k.BeforeDelegationCreated(ctx, delAddr, validator.OperatorAddress) 中都去
+	// 调了加了这个 Period然后 SetValidatorCurrentRewards 了
 	previousPeriod := k.GetValidatorCurrentRewards(ctx, val).Period - 1
 
 	// increment reference count for the period we're going to track
+	// 我们要跟踪的时段的增量引用计数 (就是之前这个参考计数)
 	k.incrementReferenceCount(ctx, val, previousPeriod)
 
 	validator := k.stakingKeeper.Validator(ctx, val)
@@ -22,11 +28,17 @@ func (k Keeper) initializeDelegation(ctx sdk.Context, val sdk.ValAddress, del sd
 	// calculate delegation stake in tokens
 	// we don't store directly, so multiply delegation shares * (tokens per share)
 	// note: necessary to truncate so we don't allow withdrawing more rewards than owed
+	// 计算 委托人质押的tokens
+	// 我们不直接存储，因此乘以委托份额*（每股代币数？）
+	// 注意：必须截断所以我们不允许撤回比欠款更多的奖励
 	stake := validator.ShareTokensTruncated(delegation.GetShares())
+
+	// 存储 委托的起始信息
 	k.SetDelegatorStartingInfo(ctx, val, del, types.NewDelegatorStartingInfo(previousPeriod, stake, uint64(ctx.BlockHeight())))
 }
 
 // calculate the rewards accrued by a delegation between two periods
+// 计算委托人在两个周期间所积累的 奖励
 func (k Keeper) calculateDelegationRewardsBetween(ctx sdk.Context, val sdk.Validator,
 	startingPeriod, endingPeriod uint64, stake sdk.Dec) (rewards sdk.DecCoins) {
 	// sanity check
@@ -39,23 +51,32 @@ func (k Keeper) calculateDelegationRewardsBetween(ctx sdk.Context, val sdk.Valid
 		panic("stake should not be negative")
 	}
 
+	// 返回 开始轮减去结束轮得到的奖励
+	// 分别获取在 start轮 某个验证人获得的奖励
+	// 及end轮 的奖励
 	// return staking * (ending - starting)
 	starting := k.GetValidatorHistoricalRewards(ctx, val.GetOperator(), startingPeriod)
 	ending := k.GetValidatorHistoricalRewards(ctx, val.GetOperator(), endingPeriod)
+
+	// 校验下累积奖励
 	difference := ending.CumulativeRewardRatio.Sub(starting.CumulativeRewardRatio)
 	if difference.IsAnyNegative() {
 		panic("negative rewards should not be possible")
 	}
 	// note: necessary to truncate so we don't allow withdrawing more rewards than owed
+	// 注意： 截断是必要的，所以我们不允许撤回比欠款更多的奖励
 	rewards = difference.MulDecTruncate(stake)
 	return
 }
 
 // calculate the total rewards accrued by a delegation
+// 计算累加某个委托人的累积奖励
 func (k Keeper) calculateDelegationRewards(ctx sdk.Context, val sdk.Validator, del sdk.Delegation, endingPeriod uint64) (rewards sdk.DecCoins) {
 	// fetch starting info for delegation
+	// 先获取 委托人的 起始委托信息
 	startingInfo := k.GetDelegatorStartingInfo(ctx, del.GetValidatorAddr(), del.GetDelegatorAddr())
 
+	//
 	if startingInfo.Height == uint64(ctx.BlockHeight()) {
 		// started this height, no rewards yet
 		return
@@ -102,6 +123,10 @@ func (k Keeper) calculateDelegationRewards(ctx sdk.Context, val sdk.Validator, d
 	return rewards
 }
 
+
+/**
+撤回当前委托人在本周起获得的奖励，并更新周期为新的一轮周期
+ */
 func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val sdk.Validator, del sdk.Delegation) sdk.Error {
 
 	// check existence of delegator starting info
@@ -114,9 +139,13 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val sdk.Validator, de
 	// 结束当前期间并计算 [验证人]奖励
 	//
 	// 递增验证人的周期 ? (里面包含了 验证人的奖励 和 参考计数的更新)
+	// 即： 开启新的一轮周期
 	endingPeriod := k.incrementValidatorPeriod(ctx, val)
 
-	// 计算 [委托人]奖励
+	// ###############
+	// ###############
+	// TODO 这一步超级重要
+	// 计算 [委托人]奖励(到当前轮次为止, 委托人的所有累积奖励)
 	rewardsRaw := k.calculateDelegationRewards(ctx, val, del, endingPeriod)
 
 	// 获取当前验证人的 优秀(出块) 奖励
@@ -152,7 +181,7 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val sdk.Validator, de
 	// coins 为被取整之后的币, remainder 为被取整时所切掉的小数的累加
 	coins, remainder := rewards.TruncateDecimal()
 
-	// 给当前见证人 追加奖励 (出块奖励 - 委托人的奖励)
+	// 给当前见证人 追加 出块总奖励 (出块奖励 - 委托人的奖励)
 	k.SetValidatorOutstandingRewards(ctx, del.GetValidatorAddr(), outstanding.Sub(rewards))
 
 	/**
@@ -164,9 +193,9 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val sdk.Validator, de
 
 	// add coins to user account
 	if !coins.IsZero() {
-		// 获取 坚持质押的(委托人)地址
+		// 获取 减持质押的(委托人)地址
 		withdrawAddr := k.GetDelegatorWithdrawAddr(ctx, del.GetDelegatorAddr())
-		//追加设置进去, 并存储起来
+		// 将撤回的钱追加接受撤回钱的账户上, 并存储起来
 		if _, _, err := k.bankKeeper.AddCoins(ctx, withdrawAddr, coins); err != nil {
 			return err
 		}

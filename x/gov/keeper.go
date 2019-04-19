@@ -97,11 +97,17 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramsKeeper params.Keeper,
 // Proposals
 
 // Creates a NewProposal
+/**
+创建 一个治理相关的 提案 (文本提案？？)
+ */
 func (keeper Keeper) NewTextProposal(ctx sdk.Context, title string, description string, proposalType ProposalKind) Proposal {
+	// 生成一个新的提案ID
 	proposalID, err := keeper.getNewProposalID(ctx)
 	if err != nil {
 		return nil
 	}
+
+	// 创建一个文本提案
 	var proposal Proposal = &TextProposal{
 		ProposalID:       proposalID,
 		Title:            title,
@@ -113,6 +119,7 @@ func (keeper Keeper) NewTextProposal(ctx sdk.Context, title string, description 
 		SubmitTime:       ctx.BlockHeader().Time,
 	}
 
+	
 	depositPeriod := keeper.GetDepositParams(ctx).MaxDepositPeriod
 	proposal.SetDepositEndTime(proposal.GetSubmitTime().Add(depositPeriod))
 
@@ -221,15 +228,20 @@ func (keeper Keeper) GetLastProposalID(ctx sdk.Context) (proposalID uint64) {
 }
 
 // Gets the next available ProposalID and increments it
+// 生成一个新的提案ID
 func (keeper Keeper) getNewProposalID(ctx sdk.Context) (proposalID uint64, err sdk.Error) {
 	store := ctx.KVStore(keeper.storeKey)
 	bz := store.Get(KeyNextProposalID)
 	if bz == nil {
 		return 0, ErrInvalidGenesis(keeper.codespace, "InitialProposalID never set")
 	}
+	// 解码出 最新的这个提案的ID
 	keeper.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &proposalID)
+	// 对最新的这个提案Id + 1 得到当前新的提案Id
 	bz = keeper.cdc.MustMarshalBinaryLengthPrefixed(proposalID + 1)
+	// 把当前提案Id设置成最新的提案Id
 	store.Set(KeyNextProposalID, bz)
+	// 返回当前提案Id
 	return proposalID, nil
 }
 

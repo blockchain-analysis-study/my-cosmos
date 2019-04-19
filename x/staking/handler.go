@@ -30,7 +30,7 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 
 		/**
-		新建 验证人 （质押/委托）
+		新建 验证人 （质押/自我授权委托）
 		 */
 		case types.MsgCreateValidator:
 			return handleMsgCreateValidator(ctx, msg, k)
@@ -42,19 +42,19 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 			return handleMsgEditValidator(ctx, msg, k)
 
 		/**
-
+		发起 委托
 		 */
 		case types.MsgDelegate:
 			return handleMsgDelegate(ctx, msg, k)
 
 		/**
-
+		重置 委托
 		 */
 		case types.MsgBeginRedelegate:
 			return handleMsgBeginRedelegate(ctx, msg, k)
 
 		/**
-
+		撤销 委托
 		 */
 		case types.MsgUndelegate:
 			return handleMsgUndelegate(ctx, msg, k)
@@ -189,7 +189,7 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 	// 写入DB
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
-
+	// 新的按照权重作为索引的 验证人信息
 	k.SetNewValidatorByPowerIndex(ctx, validator)
 
 	// call the after-creation hook
@@ -328,6 +328,8 @@ func handleMsgDelegate(ctx sdk.Context, msg types.MsgDelegate, k keeper.Keeper) 
 ###########
 */
 func handleMsgUndelegate(ctx sdk.Context, msg types.MsgUndelegate, k keeper.Keeper) sdk.Result {
+	// 开始解除委托
+	// TODO 重要的一步
 	completionTime, err := k.Undelegate(ctx, msg.DelegatorAddress, msg.ValidatorAddress, msg.SharesAmount)
 	if err != nil {
 		return err.Result()
@@ -343,6 +345,12 @@ func handleMsgUndelegate(ctx sdk.Context, msg types.MsgUndelegate, k keeper.Keep
 	return sdk.Result{Data: finishTime, Tags: tags}
 }
 
+
+/**
+###########
+重置一个委托
+###########
+*/
 func handleMsgBeginRedelegate(ctx sdk.Context, msg types.MsgBeginRedelegate, k keeper.Keeper) sdk.Result {
 	completionTime, err := k.BeginRedelegation(ctx, msg.DelegatorAddress, msg.ValidatorSrcAddress,
 		msg.ValidatorDstAddress, msg.SharesAmount)

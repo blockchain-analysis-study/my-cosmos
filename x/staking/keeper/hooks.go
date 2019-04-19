@@ -47,6 +47,9 @@ func (k Keeper) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress,
 }
 
 // BeforeDelegationSharesModified - call hook if registered
+// TODO 这一步超级重要
+// 逻辑非常多
+// 这个函数主要处理的是  withdrawDelegationRewards
 func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	if k.hooks != nil {
 		// 其实是 keeper包的hook实例的 BeforeDelegationSharesModified

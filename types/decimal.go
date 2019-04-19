@@ -25,8 +25,20 @@ const (
 )
 
 var (
+
+	// 10^18
+	/**
+	  Exp set z = x ** y mod | m | （即忽略m的符号），并返回z。
+	  如果m == nil或m == 0，则z = x ** y除非y <= 0，否则z = 1。
+	  特定大小的输入的模块化指数不是a
+	  加密恒定时间操作。
+	 */
 	precisionReuse       = new(big.Int).Exp(big.NewInt(10), big.NewInt(Precision), nil)
+
+	// 10^18/2
 	fivePrecision        = new(big.Int).Quo(precisionReuse, big.NewInt(2))
+
+
 	precisionMultipliers []*big.Int
 	zeroInt              = big.NewInt(0)
 	oneInt               = big.NewInt(1)
@@ -286,10 +298,13 @@ func (d Dec) MulInt64(i int64) Dec {
 func (d Dec) Quo(d2 Dec) Dec {
 
 	// multiply precision twice
+	// 乘以精度两次
 	mul := new(big.Int).Mul(d.Int, precisionReuse)
 	mul.Mul(mul, precisionReuse)
 
 	quo := new(big.Int).Quo(mul, d2.Int)
+
+
 	chopped := chopPrecisionAndRound(quo)
 
 	if chopped.BitLen() > 255+DecimalPrecisionBits {
@@ -299,15 +314,20 @@ func (d Dec) Quo(d2 Dec) Dec {
 }
 
 // quotient truncate
+// 商截断
 func (d Dec) QuoTruncate(d2 Dec) Dec {
 
 	// multiply precision twice
+	// 乘以精度两次
 	mul := new(big.Int).Mul(d.Int, precisionReuse)
 	mul.Mul(mul, precisionReuse)
 
 	quo := new(big.Int).Quo(mul, d2.Int)
+
+	// 直接截掉整数后面的小数
 	chopped := chopPrecisionAndTruncate(quo)
 
+	// 查看下该整数的字节数
 	if chopped.BitLen() > 255+DecimalPrecisionBits {
 		panic("Int overflow")
 	}
@@ -417,6 +437,7 @@ func (d Dec) String() string {
 // on the remainder (gaussian rounding) on the digits which have been removed.
 //
 // Mutates the input. Use the non-mutative version if that is undesired
+// 改变输入。 如果不需要，请使用非变异版本
 func chopPrecisionAndRound(d *big.Int) *big.Int {
 
 	// remove the negative and add it back when returning
@@ -495,6 +516,7 @@ func (d Dec) RoundInt() Int {
 //___________________________________________________________________________________
 
 // similar to chopPrecisionAndRound, but always rounds down
+// 类似于chopPrecisionAndRound，但总是向下舍入
 func chopPrecisionAndTruncate(d *big.Int) *big.Int {
 	return d.Quo(d, precisionReuse)
 }

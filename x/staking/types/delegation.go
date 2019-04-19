@@ -30,9 +30,15 @@ type DVVTriplet struct {
 // Delegation represents the bond with tokens held by an account. It is
 // owned by one delegator, and is associated with the voting power of one
 // validator.
+/**
+委托实例
+ */
 type Delegation struct {
+	// 委托人地址
 	DelegatorAddress sdk.AccAddress `json:"delegator_address"`
+	// 被委托的验证人地址
 	ValidatorAddress sdk.ValAddress `json:"validator_address"`
+	// 委托的金额
 	Shares           sdk.Dec        `json:"shares"`
 }
 

@@ -372,11 +372,14 @@ func (coins DecCoins) QuoDec(d Dec) DecCoins {
 }
 
 // divide all the coins by a decimal, truncating
+// 将所有硬币除以小数，截断
 func (coins DecCoins) QuoDecTruncate(d Dec) DecCoins {
 	res := make([]DecCoin, len(coins))
 	for i, coin := range coins {
 		quotient := DecCoin{
 			Denom:  coin.Denom,
+
+			// 截掉精度小数
 			Amount: coin.Amount.QuoTruncate(d),
 		}
 		res[i] = quotient

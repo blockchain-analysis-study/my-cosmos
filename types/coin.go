@@ -193,6 +193,10 @@ func (coins Coins) IsValid() bool {
 //
 // CONTRACT: Add will never return Coins where one Coin has a non-positive
 // amount. In otherwords, IsValid will always return true.
+/**
+根据面额安全添加两组 coins
+规则为有小到大重新整合两个数组，当有某两个面额一样的话，这时候需要叠加数量
+ */
 func (coins Coins) Add(coinsB Coins) Coins {
 	return coins.safeAdd(coinsB)
 }
@@ -202,6 +206,15 @@ func (coins Coins) Add(coinsB Coins) Coins {
 // other set is returned. Otherwise, the coins are compared in order of their
 // denomination and addition only occurs when the denominations match, otherwise
 // the coin is simply added to the sum assuming it's not zero.
+/**
+safeAdd:
+将执行两个硬币组的添加。
+如果两个硬币集都为空，则返回空集。
+如果只有一个集合为空，则返回另一个集合。
+否则，按照其面额的顺序对硬币进行比较，
+并且仅在面额匹配时才进行添加，
+否则硬币将简单地添加到总和中，假设它不为零。
+ */
 func (coins Coins) safeAdd(coinsB Coins) Coins {
 	sum := ([]Coin)(nil)
 	indexA, indexB := 0, 0
@@ -223,7 +236,13 @@ func (coins Coins) safeAdd(coinsB Coins) Coins {
 
 		coinA, coinB := coins[indexA], coinsB[indexB]
 
+
+		// 直接对比面额
+		// 谁的面额小就拿谁
+		// 如果面额一样时,叠加数量
+		// 最终的结果是: 在一个新的数组 sum 中,把 A, B两个数组中的元素由小到大整到一起
 		switch strings.Compare(coinA.Denom, coinB.Denom) {
+
 		case -1: // coin A denom < coin B denom
 			if !coinA.IsZero() {
 				sum = append(sum, coinA)

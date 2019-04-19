@@ -92,7 +92,10 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	// Gaia 其实就是 cosmos hub 程序
 	return app.NewGaiaApp(
 		logger, db, traceStore, true,
+		// Setpruning: 在与应用程序关联的多存储上设置一个修剪选项.
 		baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))),
+
+		// Setmingasprices: 返回在应用程序上设置最低天然气价格的选项.
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 	)
 }

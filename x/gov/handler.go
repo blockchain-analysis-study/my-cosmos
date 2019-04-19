@@ -8,6 +8,7 @@ import (
 )
 
 // Handle all "gov" type messages.
+// 处理 治理相关
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
@@ -24,7 +25,12 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
+
+/**
+提交一个提案
+ */
 func handleMsgSubmitProposal(ctx sdk.Context, keeper Keeper, msg MsgSubmitProposal) sdk.Result {
+	// 根据入参，创建一个文本提案
 	proposal := keeper.NewTextProposal(ctx, msg.Title, msg.Description, msg.ProposalType)
 	proposalID := proposal.GetProposalID()
 	proposalIDStr := fmt.Sprintf("%d", proposalID)
@@ -49,6 +55,9 @@ func handleMsgSubmitProposal(ctx sdk.Context, keeper Keeper, msg MsgSubmitPropos
 	}
 }
 
+/**
+发起治理 提案钱的质押
+ */
 func handleMsgDeposit(ctx sdk.Context, keeper Keeper, msg MsgDeposit) sdk.Result {
 	err, votingStarted := keeper.AddDeposit(ctx, msg.ProposalID, msg.Depositor, msg.Amount)
 	if err != nil {
@@ -70,6 +79,10 @@ func handleMsgDeposit(ctx sdk.Context, keeper Keeper, msg MsgDeposit) sdk.Result
 	}
 }
 
+
+/**
+对某个 治理提案进行 投票
+ */
 func handleMsgVote(ctx sdk.Context, keeper Keeper, msg MsgVote) sdk.Result {
 	err := keeper.AddVote(ctx, msg.ProposalID, msg.Voter, msg.Option)
 	if err != nil {

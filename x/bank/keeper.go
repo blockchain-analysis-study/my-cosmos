@@ -70,6 +70,7 @@ func (keeper BaseKeeper) SubtractCoins(
 }
 
 // AddCoins adds amt to the coins at the addr.
+// AddCoins 将a追加的 coins追加到对应的addr的coins字段上。
 func (keeper BaseKeeper) AddCoins(
 	ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins,
 ) (sdk.Coins, sdk.Tags, sdk.Error) {
@@ -77,6 +78,8 @@ func (keeper BaseKeeper) AddCoins(
 	if !amt.IsValid() {
 		return nil, nil, sdk.ErrInvalidCoins(amt.String())
 	}
+
+	// AddCoins 将a追加的 coins追加到对应的addr的coins字段上。
 	return addCoins(ctx, keeper.ak, addr, amt)
 }
 
@@ -291,21 +294,26 @@ func subtractCoins(ctx sdk.Context, ak auth.AccountKeeper, addr sdk.AccAddress, 
 }
 
 // AddCoins adds amt to the coins at the addr.
+// AddCoins 将a追加的 coins追加到对应的addr的coins字段上。
 func addCoins(ctx sdk.Context, am auth.AccountKeeper, addr sdk.AccAddress, amt sdk.Coins) (sdk.Coins, sdk.Tags, sdk.Error) {
 
 	if !amt.IsValid() {
 		return nil, nil, sdk.ErrInvalidCoins(amt.String())
 	}
 
+	// 从存储中获取该addr的coins
 	oldCoins := getCoins(ctx, am, addr)
+	// 追加coins
 	newCoins := oldCoins.Add(amt)
 
+	// 如果新的 coins中有一个有负数的话, 则异常
 	if newCoins.IsAnyNegative() {
 		return amt, nil, sdk.ErrInsufficientCoins(
 			fmt.Sprintf("insufficient account funds; %s < %s", oldCoins, amt),
 		)
 	}
 
+	// 重新设置 某个账户的 coins, 写入存储
 	err := setCoins(ctx, am, addr, newCoins)
 	tags := sdk.NewTags(TagKeyRecipient, addr.String())
 

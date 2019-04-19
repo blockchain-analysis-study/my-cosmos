@@ -76,15 +76,20 @@ func (h Hooks) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, 
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)
 
 	// increment period
+	// 增量验证人周期，返回刚刚结束的周期
+	//
+	// 这里除了处理 验证人的周期之外，还调整了验证人的出块奖励金额等等
 	h.k.incrementValidatorPeriod(ctx, val)
 }
+
+// 更改委托信息 TODO 逻辑非常多的一部
 func (h Hooks) BeforeDelegationSharesModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	// 从存储中分别找到 验证人 和 委托人
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)
 	del := h.k.stakingKeeper.Delegation(ctx, delAddr, valAddr)
 
 	// withdraw delegation rewards (which also increments period)
-	// 退回委托奖励（也增加期限）
+	// (因为更改委托信息,所以需要撤回本周期获得的的奖励)退回委托奖励（也增加新的周期）
 	if err := h.k.withdrawDelegationRewards(ctx, val, del); err != nil {
 		panic(err)
 	}

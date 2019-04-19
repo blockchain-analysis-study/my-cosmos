@@ -12,8 +12,11 @@ import (
 var (
 	KeyDelimiter = []byte(":")
 
+	// 最新的一个提案Id的 key
 	KeyNextProposalID           = []byte("newProposalID")
+	//
 	PrefixActiveProposalQueue   = []byte("activeProposalQueue")
+	//
 	PrefixInactiveProposalQueue = []byte("inactiveProposalQueue")
 )
 
