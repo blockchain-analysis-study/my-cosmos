@@ -86,7 +86,9 @@ func main() {
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
 		client.ConfigCmd(app.DefaultCLIHome),
+		// 查询的命令行
 		queryCmd(cdc, mc),
+		// 发普通交易的命令行
 		txCmd(cdc, mc),
 		client.LineBreak,
 		lcd.ServeCommand(cdc, registerRoutes),

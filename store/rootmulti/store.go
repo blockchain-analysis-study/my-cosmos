@@ -483,6 +483,7 @@ func setLatestVersion(batch dbm.Batch, version int64) {
 	batch.Set([]byte(latestVersionKey), latestBytes)
 }
 
+// ####### 真正写DB
 // Commits each store and returns a new commitInfo.
 func commitStores(version int64, storeMap map[types.StoreKey]types.CommitStore) commitInfo {
 	storeInfos := make([]storeInfo, 0, len(storeMap))

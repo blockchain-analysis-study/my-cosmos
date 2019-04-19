@@ -159,6 +159,7 @@ func (k Keeper) SetNewValidatorByPowerIndex(ctx sdk.Context, validator types.Val
 }
 
 // Update the tokens of an existing validator, update the validators power index key
+// 追加 验证人的token 和 被委托的股权
 func (k Keeper) AddValidatorTokensAndShares(ctx sdk.Context, validator types.Validator,
 	tokensToAdd sdk.Int) (valOut types.Validator, addedShares sdk.Dec) {
 
@@ -167,7 +168,8 @@ func (k Keeper) AddValidatorTokensAndShares(ctx sdk.Context, validator types.Val
 
 	// 获取一个 pool 实例
 	pool := k.GetPool(ctx)
-	// TODO ......
+	//
+	// 分别追加 质押 和 委托的钱
 	validator, pool, addedShares = validator.AddTokensFromDel(pool, tokensToAdd)
 
 	// 设置当前验证人的新信息

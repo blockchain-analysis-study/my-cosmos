@@ -29,7 +29,10 @@ const (
 
 // Parameter store key
 var (
+
+	// 治理 质押的key
 	ParamStoreKeyDepositParams = []byte("depositparams")
+	// 治理 投票的key
 	ParamStoreKeyVotingParams  = []byte("votingparams")
 	ParamStoreKeyTallyParams   = []byte("tallyparams")
 
@@ -119,7 +122,7 @@ func (keeper Keeper) NewTextProposal(ctx sdk.Context, title string, description 
 		SubmitTime:       ctx.BlockHeader().Time,
 	}
 
-	
+	// 获取治理质押的起始周期
 	depositPeriod := keeper.GetDepositParams(ctx).MaxDepositPeriod
 	proposal.SetDepositEndTime(proposal.GetSubmitTime().Add(depositPeriod))
 

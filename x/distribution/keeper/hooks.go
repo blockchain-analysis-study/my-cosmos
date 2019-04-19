@@ -15,6 +15,7 @@ var _ sdk.StakingHooks = Hooks{}
 func (k Keeper) Hooks() Hooks { return Hooks{k} }
 
 // nolint
+// 初始化一个验证人的各种信息
 func (h Hooks) AfterValidatorCreated(ctx sdk.Context, valAddr sdk.ValAddress) {
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)
 	h.k.initializeValidator(ctx, val)

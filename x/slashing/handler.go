@@ -5,9 +5,13 @@ import (
 	"my-cosmos/cosmos-sdk/x/slashing/tags"
 )
 
+/**
+惩罚 机制相关
+ */
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		// NOTE msg already has validate basic run
+		// 注意： msg已经验证了基本运行 ？？
 		switch msg := msg.(type) {
 		case MsgUnjail:
 			return handleMsgUnjail(ctx, msg, k)
@@ -19,13 +23,17 @@ func NewHandler(k Keeper) sdk.Handler {
 
 // Validators must submit a transaction to unjail itself after
 // having been jailed (and thus unbonded) for downtime
+// 验证者必须提交一个 交易，以便在因停工而被判入狱（因此没有绑定）后自行解雇
 func handleMsgUnjail(ctx sdk.Context, msg MsgUnjail, k Keeper) sdk.Result {
+
+	// 先获取当前验证人
 	validator := k.validatorSet.Validator(ctx, msg.ValidatorAddr)
 	if validator == nil {
 		return ErrNoValidatorForAddress(k.codespace).Result()
 	}
 
 	// cannot be unjailed if no self-delegation exists
+	// 如果不存在自委托，则不能解除监禁
 	selfDel := k.validatorSet.Delegation(ctx, sdk.AccAddress(msg.ValidatorAddr), msg.ValidatorAddr)
 	if selfDel == nil {
 		return ErrMissingSelfDelegation(k.codespace).Result()

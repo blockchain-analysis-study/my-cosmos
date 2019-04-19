@@ -86,6 +86,8 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 
+
+	// 创建一个相关的APP，其它所有的APP都可以按照这个方法
 	var app = &GaiaApp{
 		// 继承了baseApp 实例
 		BaseApp:          bApp,
@@ -114,6 +116,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	// define the accountKeeper
 	// 定义一个账户 管理器
+	// 帐户管理--从KVSTROE抽象
 	app.accountKeeper = auth.NewAccountKeeper(
 		app.cdc,
 		app.keyAccount,
@@ -122,6 +125,8 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	)
 
 	// add handlers
+	//添加各种操作——它们都从KVSTORE抽象出来,但是它们的抽象度更高，或者可以认为是accountMapper的更高一层
+
 	// 一个基础的处理类 管理器
 	app.bankKeeper = bank.NewBaseKeeper(
 		app.accountKeeper,
@@ -163,7 +168,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		distr.DefaultCodespace,
 	)
 
-	//
+	//设置惩罚机制操作者
 	app.slashingKeeper = slashing.NewKeeper(
 		app.cdc,
 		app.keySlashing,
@@ -197,6 +202,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	//
 	// TODO: Use standard bank router once transfers are enabled.
 
+	// 这个是重点，在这里注册路由的句柄
 	// ##################
 	// ##################
 	// 注册 各类路由
@@ -229,6 +235,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	/**
 	这里是 实例化了 base App
 	 */
+	// 从KV数据库加载相关数据--在当前版本中，IVAL存储是KVStore基础的实现
 	app.MountStores(app.keyMain, app.keyAccount, app.keyStaking, app.keyMint, app.keyDistr,
 		app.keySlashing, app.keyGov, app.keyFeeCollection, app.keyParams,
 		app.tkeyParams, app.tkeyStaking, app.tkeyDistr,
@@ -242,6 +249,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	app.SetBeginBlocker(app.BeginBlocker)
 
 	// 设置一个 账户及外部token等等的 auth相关的 func
+	// 设置权限控制句柄
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
 
 	// 设置一个 执行 block中tx之后调用的 func
@@ -261,6 +269,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 // custom tx codec
 // 自定义tx编解码器
+// 将相关的编码器注册到相关的各方
 func MakeCodec() *codec.Codec {
 	// 创建一个编码解码器
 	var cdc = codec.New()

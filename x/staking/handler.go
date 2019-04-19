@@ -128,21 +128,26 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) ([]abci.ValidatorUpdate, sdk.T
 func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k keeper.Keeper) sdk.Result {
 	// check to see if the pubkey or sender has been registered before
 	// 先在验证人集里面，检查以前是否已注册pubkey或sender
+	/**
+	已经质押过，不能再次质押
+	 */
 	if _, found := k.GetValidator(ctx, msg.ValidatorAddress); found {
 		return ErrValidatorOwnerExists(k.Codespace()).Result()
 	}
 
-	// 再在共识节点集里面，检查以前是否已经注册过 pubkey或sender
+	// 根据PubKey 去拿 也可以拿到的话，不给予 质押
 	if _, found := k.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(msg.PubKey)); found {
 		return ErrValidatorPubKeyExists(k.Codespace()).Result()
 	}
 
-	// 校验入参的钱的面额
+	// 校验入参的钱的面额 如果不等于 允许绑定的钱的面额
+	// 其实就是入参的面额不等于 时价的话，不给予质押
 	if msg.Value.Denom != k.GetParams(ctx).BondDenom {
 		return ErrBadDenom(k.Codespace()).Result()
 	}
 
 	// 校验下入参的验证人信息的各个字段长度
+	// 质押时填入的验证人的各个信息不符合的都不给予质押
 	if _, err := msg.Description.EnsureLength(); err != nil {
 		return err.Result()
 	}
@@ -153,7 +158,7 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 		// 转换下公钥类型
 		tmPubKey := tmtypes.TM2PB.PubKey(msg.PubKey)
 
-		// 如果当前 pubkey的类型不在 共识允许的验证人公钥类型集里面
+		// 如果当前 pubkey的【类型】不在 共识允许的验证人公钥类型集里面
 		// 需要返回Err
 		if !common.StringInSlice(tmPubKey.Type, ctx.ConsensusParams().Validator.PubKeyTypes) {
 			return ErrValidatorPubKeyTypeUnsupported(k.Codespace(),
@@ -164,6 +169,9 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 
 	/**
 	#########
+
+	【重头戏】
+
 	创建一个 验证人
 
 	根据入参的 验证人地址、公钥、及描述信息
@@ -187,14 +195,26 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 	validator.MinSelfDelegation = msg.MinSelfDelegation
 
 	// 写入DB
+	// 根据验证人addr 写入 validator
 	k.SetValidator(ctx, validator)
+	// 根据public key 转换成的 addr 写入 validator
 	k.SetValidatorByConsAddr(ctx, validator)
-	// 新的按照权重作为索引的 验证人信息
+	// 新的按照权重作为索引的 写入 validator
 	k.SetNewValidatorByPowerIndex(ctx, validator)
 
 	// call the after-creation hook
 	// 在创建 验证人之后，调用 hook函数 (类似AOP之类的做法
-	// 这里实际上是调用到了  app包的 AfterValidatorCreated 函数
+	// 这里实际上是调用到了 Keeper包的 AfterValidatorCreated 函数
+	//
+	// ###########  TODO ############# 非常重要的一步
+	//
+	//	初始化新验证者的奖励
+	//
+	//1、设置了 历史奖励
+	//2、设置了 当前奖励
+	//3、设置了 累计佣金
+	//4、设置了 出块奖励
+	//
 	k.AfterValidatorCreated(ctx, validator.OperatorAddress)
 
 	// move coins from the msg.Address account to a (self-delegation) delegator account
@@ -244,7 +264,7 @@ func handleMsgEditValidator(ctx sdk.Context, msg types.MsgEditValidator, k keepe
 	// 更新
 	validator.Description = description
 
-	// 入参的佣金比率
+	// 入参的佣金比率 不为空，则更新佣金比
 	if msg.CommissionRate != nil {
 		commission, err := k.UpdateValidatorCommission(ctx, validator, *msg.CommissionRate)
 		if err != nil {
@@ -252,7 +272,7 @@ func handleMsgEditValidator(ctx sdk.Context, msg types.MsgEditValidator, k keepe
 		}
 
 		// call the before-modification hook since we're about to update the commission
-		// 因为我们即将更新佣金，所以请调用修改前的挂钩
+		// 因为我们更新了佣金，所以必须做一些前置处理 [该方法目前还未实现]
 		k.BeforeValidatorModified(ctx, msg.ValidatorAddress)
 
 		validator.Commission = commission
@@ -261,12 +281,12 @@ func handleMsgEditValidator(ctx sdk.Context, msg types.MsgEditValidator, k keepe
 	// 如果新入参的 最小自委托 不为nil
 	if msg.MinSelfDelegation != nil {
 
-		// 不允许调低门槛
+		// 不允许调低 自委托门槛
 		if !(*msg.MinSelfDelegation).GT(validator.MinSelfDelegation) {
 			return ErrMinSelfDelegationDecreased(k.Codespace()).Result()
 		}
 
-		// 不允许通过把门槛调得比被质押/委托的钱还低
+		// 不允许通过把门槛调得比被质押/委托的钱 还要大 (否则就出问题啦，因为目前质押的竟然没有达到最低自委托门槛)
 		if (*msg.MinSelfDelegation).GT(validator.Tokens) {
 			return ErrSelfDelegationBelowMinimum(k.Codespace()).Result()
 		}
@@ -349,15 +369,19 @@ func handleMsgUndelegate(ctx sdk.Context, msg types.MsgUndelegate, k keeper.Keep
 /**
 ###########
 重置一个委托
+(所谓的重置委托，指，解除旧有验证人的委托，及添加新的验证人的委托)
 ###########
 */
 func handleMsgBeginRedelegate(ctx sdk.Context, msg types.MsgBeginRedelegate, k keeper.Keeper) sdk.Result {
+
+	// 开始重新委托
 	completionTime, err := k.BeginRedelegation(ctx, msg.DelegatorAddress, msg.ValidatorSrcAddress,
 		msg.ValidatorDstAddress, msg.SharesAmount)
 	if err != nil {
 		return err.Result()
 	}
 
+	// 解码完成时间
 	finishTime := types.MsgCdc.MustMarshalBinaryLengthPrefixed(completionTime)
 	resTags := sdk.NewTags(
 		tags.Delegator, msg.DelegatorAddress.String(),

@@ -327,6 +327,7 @@ func (k Keeper) HasReceivingRedelegation(ctx sdk.Context,
 }
 
 // HasMaxRedelegationEntries - redelegation has maximum number of entries
+// redelegation具有最大条目数
 func (k Keeper) HasMaxRedelegationEntries(ctx sdk.Context,
 	delegatorAddr sdk.AccAddress, validatorSrcAddr,
 	validatorDstAddr sdk.ValAddress) bool {
@@ -516,6 +517,9 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 	###############
 	###############
 	将本次委托的金额关联到该验证人身上
+
+	TODO 这个方法里 有追加 质押的token 和 追加被委托的股权的处理
+
 	###############
 	###############
 	 */
@@ -575,12 +579,17 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 	// 减持委托的钱
 	delegation.Shares = delegation.Shares.Sub(shares)
 
+
+	// ####################
+	// 判断 委托addr 和 验证人 addr 是否同一个地址
+	// ####################
 	isValidatorOperator := bytes.Equal(delegation.DelegatorAddress, validator.OperatorAddress)
 
 	// if the delegation is the operator of the validator and undelegating will decrease the validator's self delegation below their minimum
 	// trigger a jail validator
 	//
 	// 如果委托人地址就是是验证人地址，并且解除委托的钱会将验证者的自我委托减少到最小的质押限制？
+	// 是属于自己委托，且没有被slash锁定且 需要解除的自委托的钱，少于自身最低自委托限制
 	if isValidatorOperator && !validator.Jailed &&
 		// 如果减持后的钱小于 质押的最小门槛
 		validator.ShareTokens(delegation.Shares).TruncateInt().LT(validator.MinSelfDelegation) {
@@ -634,6 +643,7 @@ func (k Keeper) getBeginInfo(ctx sdk.Context, valSrcAddr sdk.ValAddress) (
 	// TODO: when would the validator not be found?
 	// 什么时候会找不到验证人？？
 	// 当验证人找不到 或者 该验证人被锁定时
+	// 验证人已经发起 解除质押请求了， 这时候进入了锁定状态？
 	case !found || validator.Status == sdk.Bonded:
 
 		// the longest wait - just unbonding period from now
@@ -689,6 +699,7 @@ func (k Keeper) Undelegate(ctx sdk.Context, delAddr sdk.AccAddress,
 	balance := sdk.NewCoin(k.BondDenom(ctx), returnAmount)
 
 	// no need to create the ubd object just complete now
+	// 如果是 completeNow 的话，当前 不需要创建  ubd 对象
 	if completeNow {
 		// track undelegation only when remaining or truncated shares are non-zero
 		if !balance.IsZero() {
@@ -751,23 +762,28 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress,
 }
 
 // begin unbonding / redelegation; create a redelegation record
+// 开始解除锁定/重新授权; 创建一个重新授权记录
 func (k Keeper) BeginRedelegation(ctx sdk.Context, delAddr sdk.AccAddress,
 	valSrcAddr, valDstAddr sdk.ValAddress, sharesAmount sdk.Dec) (
 	completionTime time.Time, errSdk sdk.Error) {
 
+	// 不允许 新的被委托验证人和 老的被委托验证人是同一人
 	if bytes.Equal(valSrcAddr, valDstAddr) {
 		return time.Time{}, types.ErrSelfRedelegation(k.Codespace())
 	}
 
 	// check if this is a transitive redelegation
+	// 检查 ；如果这是一个传递性的重新授权 (不懂是啥意思)
 	if k.HasReceivingRedelegation(ctx, delAddr, valSrcAddr) {
 		return time.Time{}, types.ErrTransitiveRedelegation(k.Codespace())
 	}
 
+	// redelegation具有最大条目数
 	if k.HasMaxRedelegationEntries(ctx, delAddr, valSrcAddr, valDstAddr) {
 		return time.Time{}, types.ErrMaxRedelegationEntries(k.Codespace())
 	}
 
+	// 解除旧有验证人的委托锁定
 	returnAmount, err := k.unbond(ctx, delAddr, valSrcAddr, sharesAmount)
 	if err != nil {
 		return time.Time{}, err
@@ -776,25 +792,32 @@ func (k Keeper) BeginRedelegation(ctx sdk.Context, delAddr sdk.AccAddress,
 	if returnAmount.IsZero() {
 		return time.Time{}, types.ErrVerySmallRedelegation(k.Codespace())
 	}
+
+	// 获取新的验证人信息
 	dstValidator, found := k.GetValidator(ctx, valDstAddr)
 	if !found {
 		return time.Time{}, types.ErrBadRedelegationDst(k.Codespace())
 	}
 
+	// 委托给新的 验证人
 	sharesCreated, err := k.Delegate(ctx, delAddr, returnAmount, dstValidator, false)
 	if err != nil {
 		return time.Time{}, err
 	}
 
 	// create the unbonding delegation
+	// 获取 当前动作的 创建时间
 	completionTime, height, completeNow := k.getBeginInfo(ctx, valSrcAddr)
 
 	if completeNow { // no need to create the redelegation object
 		return completionTime, nil
 	}
 
+	// 记录重新委托信息
 	red := k.SetRedelegationEntry(ctx, delAddr, valSrcAddr, valDstAddr,
 		height, completionTime, returnAmount, sharesAmount, sharesCreated)
+
+	// 加入重新委托队列
 	k.InsertRedelegationQueue(ctx, red, completionTime)
 	return completionTime, nil
 }

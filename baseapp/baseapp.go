@@ -148,6 +148,9 @@ func (app *BaseApp) MountStores(keys ...sdk.StoreKey) {
 	}
 }
 
+
+
+// ############ 存储相关
 // MountStoreWithDB mounts a store to the provided key in the BaseApp
 // multistore, using a specified DB.
 func (app *BaseApp) MountStoreWithDB(key sdk.StoreKey, typ sdk.StoreType, db dbm.DB) {

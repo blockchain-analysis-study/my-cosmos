@@ -30,6 +30,8 @@ var (
 	KeyUnbondingTime = []byte("UnbondingTime")
 	KeyMaxValidators = []byte("MaxValidators")
 	KeyMaxEntries    = []byte("KeyMaxEntries")
+
+	// 绑定的钱的面额的key
 	KeyBondDenom     = []byte("BondDenom")
 )
 

@@ -7,17 +7,30 @@ import (
 )
 
 // initialize rewards for a new validator
+/**
+####### 很重要的一步
+初始化新验证者的奖励
+
+1、设置了 历史奖励
+2、设置了 当前奖励
+3、设置了 累计佣金
+4、设置了 出块奖励
+ */
 func (k Keeper) initializeValidator(ctx sdk.Context, val sdk.Validator) {
 	// set initial historical rewards (period 0) with reference count of 1
+	// 设置初始历史奖励（期间0），引用次数为1 [初始的历史奖励为 0]
 	k.SetValidatorHistoricalRewards(ctx, val.GetOperator(), 0, types.NewValidatorHistoricalRewards(sdk.DecCoins{}, 1))
 
 	// set current rewards (starting at period 1)
+	// 设置当前奖励（从第1期开始） [初始的第一周期奖励为 0]
 	k.SetValidatorCurrentRewards(ctx, val.GetOperator(), types.NewValidatorCurrentRewards(sdk.DecCoins{}, 1))
 
 	// set accumulated commission
+	// 设定累计佣金 [初始的累积佣金为 0]
 	k.SetValidatorAccumulatedCommission(ctx, val.GetOperator(), types.InitialValidatorAccumulatedCommission())
 
 	// set outstanding rewards
+	// 设定出块的奖励 [初始的出块奖励为 0]
 	k.SetValidatorOutstandingRewards(ctx, val.GetOperator(), sdk.DecCoins{})
 }
 

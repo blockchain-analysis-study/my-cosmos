@@ -20,6 +20,10 @@ const (
 )
 
 // SendTxCmd will create a send tx and sign it with the given key.
+// SendTxCmd将创建一个send tx并使用给定的密钥对其进行签名
+/**
+发起一个普通交易
+ */
 func SendTxCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "send [to_address] [amount]",

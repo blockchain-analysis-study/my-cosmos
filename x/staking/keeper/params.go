@@ -38,7 +38,10 @@ func (k Keeper) MaxEntries(ctx sdk.Context) (res uint16) {
 }
 
 // BondDenom - Bondable coin denomination
+// 先获取 可以给予 绑定的钱的面额
 func (k Keeper) BondDenom(ctx sdk.Context) (res string) {
+
+	// 先获取 可以给予 绑定的钱的面额
 	k.paramstore.Get(ctx, types.KeyBondDenom, &res)
 	return
 }

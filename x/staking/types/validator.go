@@ -57,15 +57,16 @@ type Validator struct {
 	ConsPubKey              crypto.PubKey  `json:"consensus_pubkey"`    // the consensus public key of the validator; bech encoded in JSON
 
 	// 表示 当前验证人是否属于锁定状态
+	// 这个貌似和 slash (惩罚机制) 相关的 (入狱？)
 	Jailed                  bool           `json:"jailed"`              // has the validator been jailed from bonded status?
 
-	// 验证器状态（被绑定/解除绑定/未被绑定）
+	// 验证器状态（被绑定/解除绑定/未被绑定） [这个主要是 解质押的时候 锁定 三周 用？]
 	Status                  sdk.BondStatus `json:"status"`              // validator status (bonded/unbonding/unbonded)
 
 	// 委托代币（包括自我授权）
 	Tokens                  sdk.Int        `json:"tokens"`              // delegated tokens (incl. self-delegation)
 
-	// 发给验证人的委托人发出的总委托钱
+	// 发给验证人的委托人发出的总委托的 占比？
 	DelegatorShares         sdk.Dec        `json:"delegator_shares"`    // total shares issued to a validator's delegators
 
 	// 当前 验证人的一些描述信息
@@ -487,7 +488,7 @@ func (v Validator) InvalidExRate() bool {
 // calculate the token worth of provided shares
 // 计算入参的数额的代币价值
 func (v Validator) ShareTokens(shares sdk.Dec) sdk.Dec {
-	// money × 总质押的钱 / 总委托的钱
+	// 单个股份 × 总质押的钱 / 总委托的股份
 	return (shares.MulInt(v.Tokens)).Quo(v.DelegatorShares)
 }
 

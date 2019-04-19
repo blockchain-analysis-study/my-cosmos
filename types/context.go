@@ -20,6 +20,8 @@ The intent of Context is for it to be an immutable object that can be
 cloned and updated cheaply with WithValue() and passed forward to the
 next decorator or handler. For example,
 
+Context的意图是成为一个不可变对象，可以使用WithValue（）以低成本克隆和更新，并传递给下一个装饰器或处理程序。 例如，
+
  func MsgHandler(ctx Context, tx Tx) Result {
  	...
  	ctx = ctx.WithValue(key, value)
