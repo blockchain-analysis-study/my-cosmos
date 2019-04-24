@@ -23,6 +23,16 @@ import (
 // CONTRACT: Only validators with non-zero power or zero-power that were bonded
 // at the previous block height or were removed from the validator set entirely
 // are returned to Tendermint.
+/**
+TODO 重要的 函数 【验证人更新】
+将累积的更新应用并返回到绑定的验证器集。 也，
+* 更新LastValidatorPowerKey 为key 的活动valset (验证人集合)。
+* 更新LastTotalPowerKey 为key的总权重。
+* 根据更新的权力更新验证者状态。
+* 更新绑定的费用池与未绑定的令牌。
+* 更新相关指数。
+
+ */
 func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []abci.ValidatorUpdate) {
 
 	store := ctx.KVStore(k.storeKey)
@@ -43,12 +53,21 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 	// 这是一个 map
 	last := k.getLastValidatorsByAddr(ctx)
 
+	// TODO ########################
+	// TODO ########################
+	// TODO 重要的一步， 根据权重迭代所有 验证人
 	// Iterate over validators, highest power to lowest.
 	// 按照权重索引 最高到最低 返回一个所有验证人的迭代器。
+	// TODO ########################
+	// TODO ########################
 	iterator := sdk.KVStoreReversePrefixIterator(store, ValidatorsByPowerIndexKey)
 	defer iterator.Close()
+
+
 	/**
 	TODO 迭代所有验证人
+
+	必须小于最大验证人个数
 	 */
 	for count := 0; iterator.Valid() && count < int(maxValidators); iterator.Next() {
 
@@ -103,6 +122,11 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		// 如果权重又发生改变了，则需要更新 验证人集合
 		// (全部收集到 updates 集合中，最后返回出去)
 		if !found || !bytes.Equal(oldPowerBytes, newPowerBytes) {
+
+			// TODO ########################
+			// TODO ########################
+			// TODO 收集起来
+			// 接收所有 被组装成 tendermint 的abci.ValidatorUpdate 类型信息
 			updates = append(updates, validator.ABCIValidatorUpdate())
 
 			// set validator power on lookup index

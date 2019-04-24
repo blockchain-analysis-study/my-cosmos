@@ -40,6 +40,7 @@ var (
 	ValidatorsByConsAddrKey   = []byte{0x22} // prefix for each key to a validator index, by pubkey
 
 	/**
+	TODO 重要的 key
 	验证人的权重key前缀
 	 */
 	ValidatorsByPowerIndexKey = []byte{0x23} // prefix for each key to a validator index, sorted by power
@@ -112,6 +113,7 @@ func GetLastValidatorPowerKey(operator sdk.ValAddress) []byte {
 // NOTE the larger values are of higher value
 // nolint: unparam
 /**
+TODO 非常重要的一步 计算权重
 获得验证人的权重排名
 注意，较大的值具有较高的值
 nolint：unparam

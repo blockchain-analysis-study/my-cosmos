@@ -69,6 +69,8 @@ func (app *BaseApp) SetEndBlocker(endBlocker sdk.EndBlocker) {
 	if app.sealed {
 		panic("SetEndBlocker() on sealed BaseApp")
 	}
+	// TODO
+	// 这个很刚，最终是交由  底层的 tendermint 发起调用，获取每个block执行过之后的一些变更信息
 	app.endBlocker = endBlocker
 }
 

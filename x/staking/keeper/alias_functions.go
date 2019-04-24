@@ -50,6 +50,7 @@ func (k Keeper) IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index in
 }
 
 // iterate through the active validator set and perform the provided function
+// 遍历所有 权重值验证人 ?
 func (k Keeper) IterateLastValidators(ctx sdk.Context, fn func(index int64, validator sdk.Validator) (stop bool)) {
 	iterator := k.LastValidatorsIterator(ctx)
 	defer iterator.Close()

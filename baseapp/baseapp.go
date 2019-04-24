@@ -884,6 +884,10 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 }
 
 // EndBlock implements the ABCI interface.
+/**
+TODO 注意这个超级重要 这个函数最终会由 底层的 tendermint 发起 rpc 调用，来向cosmos 获取最新变更的 验证人列表
+types.pb.go
+ */
 func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBlock) {
 	if app.deliverState.ms.TracingEnabled() {
 		app.deliverState.ms = app.deliverState.ms.SetTracingContext(nil).(sdk.CacheMultiStore)
@@ -893,6 +897,7 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 
 		/**
 		TODO 调用 每个区块处理最后一般的操作 (cosmos-sdk <-> tendermint 交互)
+		 在这个方法里面会有 更新验证人列表的 逻辑
 		 */
 		res = app.endBlocker(app.deliverState.ctx, req)
 	}

@@ -164,6 +164,11 @@ func run(rootDir string) {
 
 	// Create executor
 	fmt.Println("Creating block executor")
+
+	/**
+	一些Mock数据而已啦
+	TODO 重要，实例化一个block 执行器
+	 */
 	blockExec := tmsm.NewBlockExecutor(tmDB, ctx.Logger, proxyApp.Consensus(),
 		tmsm.MockMempool{}, tmsm.MockEvidencePool{})
 

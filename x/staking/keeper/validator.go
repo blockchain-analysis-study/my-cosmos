@@ -137,6 +137,7 @@ func (k Keeper) SetValidatorByConsAddr(ctx sdk.Context, validator types.Validato
 }
 
 // validator index
+// 更新 对应权重的验证人
 func (k Keeper) SetValidatorByPowerIndex(ctx sdk.Context, validator types.Validator) {
 	// jailed validators are not kept in the power index
 	if validator.Jailed {
@@ -147,6 +148,7 @@ func (k Keeper) SetValidatorByPowerIndex(ctx sdk.Context, validator types.Valida
 }
 
 // validator index
+// 删除 对应权重的 验证人
 func (k Keeper) DeleteValidatorByPowerIndex(ctx sdk.Context, validator types.Validator) {
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(GetValidatorsByPowerIndexKey(validator))
@@ -320,6 +322,8 @@ func (k Keeper) GetBondedValidatorsByPower(ctx sdk.Context) []types.Validator {
 }
 
 // returns an iterator for the current validator power store
+// TODO 重要的函数
+// 返回根据权重存储的所有验证人的 迭代器
 func (k Keeper) ValidatorsPowerStoreIterator(ctx sdk.Context) (iterator sdk.Iterator) {
 	store := ctx.KVStore(k.storeKey)
 	iterator = sdk.KVStoreReversePrefixIterator(store, ValidatorsByPowerIndexKey)

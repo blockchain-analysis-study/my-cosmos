@@ -327,6 +327,10 @@ func (d Description) EnsureLength() (Description, sdk.Error) {
 
 // ABCIValidatorUpdate returns an abci.ValidatorUpdate from a staking validator type
 // with the full validator power
+/**
+ABCIValidatorUpdate:
+从 staking的完整 validator类型返回abci.ValidatorUpdate
+ */
 func (v Validator) ABCIValidatorUpdate() abci.ValidatorUpdate {
 	return abci.ValidatorUpdate{
 		PubKey: tmtypes.TM2PB.PubKey(v.ConsPubKey),

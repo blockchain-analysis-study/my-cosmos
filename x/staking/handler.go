@@ -89,6 +89,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) ([]abci.ValidatorUpdate, sdk.T
 	// ApplyAndReturnValidatorSetUpdates and then Unbonding -> Unbonded during
 	// UnbondAllMatureValidatorQueue).
 	/**
+	TODO 重要一步
 	计算 验证人的 变更
 
 	注意：ApplyAndReturnValidatorSetUpdates 函数必须在UnbondAllMatureValidatorQueue 函数之前被调用。

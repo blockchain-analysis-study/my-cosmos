@@ -241,7 +241,11 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		app.tkeyParams, app.tkeyStaking, app.tkeyDistr,
 	)
 
+	/**
+	TODO 重要
 
+	TODO 注册各种重要的函数
+	 */
 	// 设置一个 初始化链的 func
 	app.SetInitChainer(app.initChainer)
 
@@ -252,6 +256,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// 设置权限控制句柄
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
 
+	// TODO 重要   关于诶个block 执行之后的 验证人信息变更全部在这里了 和tendermint交互的
 	// 设置一个 执行 block中tx之后调用的 func
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -320,12 +325,15 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 	}
 }
 
+// TODO 超级重要
 // application updates every end block
 // nolint: unparam
 // 在每个区块执行结束前 调用
 // DeliverTx消息处理完成所有的交易后调用，主要用来对验证人集合的结果进行维护.
 func (app *GaiaApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	tags := gov.EndBlocker(ctx, app.govKeeper)
+
+	// staking 的验证人变更的逻辑在这里哦
 	validatorUpdates, endBlockerTags := staking.EndBlocker(ctx, app.stakingKeeper)
 	tags = append(tags, endBlockerTags...)
 
