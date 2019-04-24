@@ -25,6 +25,13 @@ import (
 ###########
  */
 func NewHandler(k keeper.Keeper) sdk.Handler {
+
+	// TODO SDK使用Context来传递跨函数的公共信息
+	// 最重要的是，Context限制了基于对象功能键的KVStore访问，
+	// 只有已明确访问key的处理程序才能访问相应的存储.
+	//
+	// Handler接受Context和Msg作为输入并返回Result。
+	// Result由相应的ABCI result驱动，它包含有关事务的返回值，错误信息，日志和元数据
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		// NOTE msg already has validate basic run
 		switch msg := msg.(type) {
@@ -65,6 +72,10 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 }
 
 // Called every block, update validator set
+// ############ TODO 超级重要
+/**
+每一个Block执行结束前都需要调用更新 验证人列表
+ */
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) ([]abci.ValidatorUpdate, sdk.Tags) {
 	resTags := sdk.NewTags()
 
@@ -77,14 +88,32 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) ([]abci.ValidatorUpdate, sdk.T
 	// unbonded after the Endblocker (go from Bonded -> Unbonding during
 	// ApplyAndReturnValidatorSetUpdates and then Unbonding -> Unbonded during
 	// UnbondAllMatureValidatorQueue).
-	validatorUpdates := k.ApplyAndReturnValidatorSetUpdates(ctx)
+	/**
+	计算 验证人的 变更
+
+	注意：ApplyAndReturnValidatorSetUpdates 函数必须在UnbondAllMatureValidatorQueue 函数之前被调用。
+	这解决了当解除委托期是即时的错误（在某些测试中就是这种情况）。
+	测试期望验证人在Endblocker之后完全 解除锁定
+	（在ApplyAndReturnValidatorSetUpdates期间从
+	Bonded  - > Unbonding，
+	然后在UnbondAllMatureValidatorQueue期间取消绑定 - > Unbonded）。
+	 */
+	validatorUpdates := k.ApplyAndReturnValidatorSetUpdates(ctx)  // 这个函数 返回所有有变更的验证人集合
 
 	// Unbond all mature validators from the unbonding queue.
+	// 解除锁定来自unbonding (需要被解除锁定的)队列的所有成熟验证器。
 	k.UnbondAllMatureValidatorQueue(ctx)
 
 	// Remove all mature unbonding delegations from the ubd queue.
+	// 移除所有在 ubd queue 队列的需要解锁的委托人信息
 	matureUnbonds := k.DequeueAllMatureUBDQueue(ctx, ctx.BlockHeader().Time)
+
+	// 遍历处理 解除委托逻辑
 	for _, dvPair := range matureUnbonds {
+
+		/**
+		TODO 真正去处理解除委托退款的
+		 */
 		err := k.CompleteUnbonding(ctx, dvPair.DelegatorAddress, dvPair.ValidatorAddress)
 		if err != nil {
 			continue
@@ -98,8 +127,11 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) ([]abci.ValidatorUpdate, sdk.T
 	}
 
 	// Remove all mature redelegations from the red queue.
+	// 从重新委托队列中 移除所有完善的 重新委托信息
 	matureRedelegations := k.DequeueAllMatureRedelegationQueue(ctx, ctx.BlockHeader().Time)
 	for _, dvvTriplet := range matureRedelegations {
+
+		// 逐个处理 重新委托信息
 		err := k.CompleteRedelegation(ctx, dvvTriplet.DelegatorAddress,
 			dvvTriplet.ValidatorSrcAddress, dvvTriplet.ValidatorDstAddress)
 		if err != nil {
@@ -222,6 +254,7 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 	/**
 	将币从msg.Address帐户移动到（自我授权）委托人帐户
 	验证人帐户和全局共享在此处更新
+	TODO 质押就是自委托
 	 */
 	_, err = k.Delegate(ctx, msg.DelegatorAddress, msg.Value.Amount, validator, true)
 	if err != nil {

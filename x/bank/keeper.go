@@ -116,6 +116,12 @@ func (keeper BaseKeeper) DelegateCoins(
 // address addr. For vesting accounts, undelegation amounts are tracked for both
 // vesting and vested coins.
 // If any of the undelegation amounts are negative, an error is returned.
+/**
+UndelegateCoins通过将amt硬币存入账户来执行解除授权
+地址地址。 对于归属账户，可以跟踪两个账户的未抵押金额
+归属和归属硬币。
+如果任何未撤销金额为负数，则返回错误。
+ */
 func (keeper BaseKeeper) UndelegateCoins(
 	ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins,
 ) (sdk.Tags, sdk.Error) {
@@ -413,6 +419,7 @@ func delegateCoins(
 	), nil
 }
 
+// 解锁委托的钱，并原路返回到 委托人账户中
 func undelegateCoins(
 	ctx sdk.Context, ak auth.AccountKeeper, addr sdk.AccAddress, amt sdk.Coins,
 ) (sdk.Tags, sdk.Error) {
@@ -426,6 +433,7 @@ func undelegateCoins(
 		return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", addr))
 	}
 
+	// 这里面，把钱加回账户上
 	if err := trackUndelegation(acc, amt); err != nil {
 		return nil, sdk.ErrInternal(fmt.Sprintf("failed to track undelegation: %v", err))
 	}
@@ -460,5 +468,6 @@ func trackUndelegation(acc auth.Account, amt sdk.Coins) error {
 		return nil
 	}
 
+	// 把钱加回账户上
 	return acc.SetCoins(acc.GetCoins().Add(amt))
 }

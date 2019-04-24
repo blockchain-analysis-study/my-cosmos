@@ -44,6 +44,7 @@ func NewHandler(k bank.Keeper) sdk.Handler {
 // than the standard bank module MsgSend message handler in that it transfers
 // an amount from one account to another under the condition of transfers being
 // enabled.
+// TODO 消息发送入口 ??
 func handleMsgSend(ctx sdk.Context, k bank.Keeper, msg bank.MsgSend) sdk.Result {
 	// No need to modify handleMsgSend as the forked module requires no changes,
 	// so we can just call the standard bank modules handleMsgSend since we know

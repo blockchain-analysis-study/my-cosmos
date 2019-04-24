@@ -68,6 +68,8 @@ func ParseTimeBytes(bz []byte) (time.Time, error) {
 }
 
 // NewLevelDB instantiate a new LevelDB instance according to DBBackend.
+// NewLevelDB:
+// 根据DBBackend实例化一个新的LevelDB实例。
 func NewLevelDB(name, dir string) (db dbm.DB, err error) {
 	backend := dbm.GoLevelDBBackend
 	if DBBackend == string(dbm.CLevelDBBackend) {

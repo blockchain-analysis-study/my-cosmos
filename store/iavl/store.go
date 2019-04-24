@@ -40,6 +40,7 @@ var _ types.CommitStore = (*Store)(nil)
 var _ types.Queryable = (*Store)(nil)
 
 // Store Implements types.KVStore and CommitStore.
+// TODO cosmos 主要存储结构 IAVL 树结构
 type Store struct {
 	// The underlying tree.
 	tree *iavl.MutableTree

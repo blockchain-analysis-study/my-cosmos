@@ -28,6 +28,10 @@ Context的意图是成为一个不可变对象，可以使用WithValue（）以�
  	...
  }
 */
+// SDK使用Context来传递跨函数的公共信息，
+// 最重要的是，Context限制了基于对象功能键的KVStore访问，
+// 只有已明确访问key的处理程序才能访问相应的存储。
+// Context还包含块头，其中包含来自区块链的最新时间戳以及有关最新块的其他信息。
 type Context struct {
 	context.Context
 	pst *thePast
@@ -77,7 +81,10 @@ func (c Context) Value(key interface{}) interface{} {
 	return value
 }
 
+// TODO 超级重要
 // KVStore fetches a KVStore from the MultiStore.
+// KVStore从MultiStore中获取KVStore。
+// 根据入参的 key类型，返回上下文中传递的 store 实例
 func (c Context) KVStore(key StoreKey) KVStore {
 	return gaskv.NewStore(c.MultiStore().GetKVStore(key), c.GasMeter(), stypes.KVGasConfig())
 }

@@ -56,10 +56,15 @@ func BondStatusToString(b BondStatus) string {
 }
 
 // PowerReduction is the amount of staking tokens required for 1 unit of Tendermint power
+/**
+PowerReduction是 每个单位Tendermint 权重所需的 staking令牌数量
+ */
 var PowerReduction = NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil))
 
 // TokensToTendermintPower - convert input tokens to potential tendermint power
+// 根据token数量计算 Tendermint 权重值
 func TokensToTendermintPower(tokens Int) int64 {
+	// 用 token 的数量/ (每个单位Tendermint 权重所需的 staking令牌数量) == 权重值
 	return (tokens.Quo(PowerReduction)).Int64()
 }
 

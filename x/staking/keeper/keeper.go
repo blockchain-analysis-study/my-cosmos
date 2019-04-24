@@ -109,6 +109,7 @@ func (k Keeper) GetLastTotalPower(ctx sdk.Context) (power sdk.Int) {
 }
 
 // Set the last total validator power.
+// 设置最新的所有验证人总权重信息
 func (k Keeper) SetLastTotalPower(ctx sdk.Context, power sdk.Int) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshalBinaryLengthPrefixed(power)

@@ -69,9 +69,9 @@ type BaseApp struct {
 	// See methods setCheckState and setDeliverState.
 	checkState   *state          // for CheckTx
 	deliverState *state          // for DeliverTx
-	voteInfos    []abci.VoteInfo // absent validators from begin block
+	voteInfos    []abci.VoteInfo // absent validators from begin block  没有来自开始块的验证器 ??
 
-	// consensus params
+	// consensus params 共识参数 ？？
 	// TODO: Move this in the future to baseapp param store on main store.
 	consensusParams *abci.ConsensusParams
 
@@ -129,6 +129,10 @@ func (app *BaseApp) SetCommitMultiStoreTracer(w io.Writer) {
 
 // MountStores mounts all IAVL or DB stores to the provided keys in the BaseApp
 // multistore.
+/**
+MountStore:
+将所有IAVL或DB存储安装到BaseApp多存储中提供的密钥。
+ */
 func (app *BaseApp) MountStores(keys ...sdk.StoreKey) {
 	for _, key := range keys {
 		switch key.(type) {
@@ -322,6 +326,20 @@ func (app *BaseApp) SetOption(req abci.RequestSetOption) (res abci.ResponseSetOp
 
 // InitChain implements the ABCI interface. It runs the initialization logic
 // directly on the CommitMultiStore.
+/**
+TODO 重要的入口
+InitChain实现了ABCI接口。
+它直接在CommitMultiStore上运行初始化逻辑。
+
+
+它会被Tendermint在启动时调用一次，
+用来初始化各种相关的Message，
+比如共识层的参数和最初的验证人的集合数据。
+当然，肯定还会有决定信息处理的方式.
+
+
+在调用这个函数的期间，对这些信息进行填充并存储
+ */
 func (app *BaseApp) InitChain(req abci.RequestInitChain) (res abci.ResponseInitChain) {
 	// stash the consensus params in the cms main store and memoize
 	if req.ConsensusParams != nil {
@@ -561,6 +579,21 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 // the route match to see whether a handler exists.
 //
 // NOTE:CheckTx does not run the actual Msg handler function(s).
+/**
+
+CheckTx实现了ABCI接口。
+它运行“基本检查”以查看是否可以执行事务，
+首先解码，然后是ante处理程序（检查签名/费用/ ValidateBasic），
+然后最终路由匹配以查看是否存在处理程序。
+
+注意：CheckTx不运行实际的Msg处理函数。
+
+
+CheckTx用于交易池。它只运行AnteHandler （handler累函数调用之前被调用的函数类型）。
+消息处理直到交易已经被提交到区块时才开始处理的代价是非常之高的。
+AnteHandler对发送者授权，确保他们有足够的手续费去支付。
+如果之后交易失败，发送者仍然会支付这笔费用
+ */
 func (app *BaseApp) CheckTx(txBytes []byte) (res abci.ResponseCheckTx) {
 	var result sdk.Result
 
@@ -582,6 +615,8 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res abci.ResponseCheckTx) {
 }
 
 // DeliverTx implements the ABCI interface.
+// TODO 这个才是 处理交易的 函数 ？？
+// 和 BeginBlock 及EndBlock 息息相关
 func (app *BaseApp) DeliverTx(txBytes []byte) (res abci.ResponseDeliverTx) {
 	var result sdk.Result
 
@@ -604,6 +639,7 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res abci.ResponseDeliverTx) {
 }
 
 // validateBasicTxMsgs executes basic validator calls for messages.
+// validateBasicTxMsgs :执行基本验证器 检查逻辑。
 func validateBasicTxMsgs(msgs []sdk.Msg) sdk.Error {
 	if msgs == nil || len(msgs) == 0 {
 		return sdk.ErrUnknownRequest("Tx.GetMsgs() must return at least one message in list")
@@ -854,6 +890,10 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 	}
 
 	if app.endBlocker != nil {
+
+		/**
+		TODO 调用 每个区块处理最后一般的操作 (cosmos-sdk <-> tendermint 交互)
+		 */
 		res = app.endBlocker(app.deliverState.ctx, req)
 	}
 
@@ -861,11 +901,20 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 }
 
 // Commit implements the ABCI interface.
+/**
+TODO 注意因为GaiaApp 继承了 BaseApp 的哦，所以GaiaApp 可以直接调用这个哦
+当处理完成交易后，应该把完成的交易从内存持久化到硬盘上，
+并以上为根据创建返回被下一个Tendermint区块需要的默克尔树的Root哈希值。
+这个哈希值 的作用在区块链中基本是一样的，用来验证合法性
+ */
 func (app *BaseApp) Commit() (res abci.ResponseCommit) {
 	header := app.deliverState.ctx.BlockHeader()
 
 	// write the Deliver state and commit the MultiStore
+	// 编写Deliver状态并提交MultiStore
 	app.deliverState.ms.Write()
+
+	//
 	commitID := app.cms.Commit()
 	app.logger.Debug("Commit synced", "commit", fmt.Sprintf("%X", commitID))
 

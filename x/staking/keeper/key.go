@@ -21,7 +21,13 @@ var (
 	PoolKey = []byte{0x00} // key for the staking pools
 
 	// Last* values are constant during a block.
+	/**
+	最新的验证人的权重信息 key前缀
+	 */
 	LastValidatorPowerKey = []byte{0x11} // prefix for each key to a validator index, for bonded validators
+	/**
+	最新的验证人 总权重信息 key
+	 */
 	LastTotalPowerKey     = []byte{0x12} // prefix for the total power
 
 	/**
@@ -38,6 +44,10 @@ var (
 	 */
 	ValidatorsByPowerIndexKey = []byte{0x23} // prefix for each key to a validator index, sorted by power
 
+
+	/**
+	当前节点上所有委托人的信息的
+	 */
 	DelegationKey                    = []byte{0x31} // key for a delegation
 	UnbondingDelegationKey           = []byte{0x32} // key for an unbonding-delegation
 	UnbondingDelegationByValIndexKey = []byte{0x33} // prefix for each key for an unbonding-delegation, by validator operator
@@ -45,8 +55,19 @@ var (
 	RedelegationByValSrcIndexKey     = []byte{0x35} // prefix for each key for an redelegation, by source validator operator
 	RedelegationByValDstIndexKey     = []byte{0x36} // prefix for each key for an redelegation, by destination validator operator
 
+	/**
+	unbonding队列中时间戳的前缀
+	 */
 	UnbondingQueueKey    = []byte{0x41} // prefix for the timestamps in unbonding queue
+
+	/**
+	重新授权委托队列中时间戳的前缀
+	 */
 	RedelegationQueueKey = []byte{0x42} // prefix for the timestamps in redelegations queue
+
+	/**
+	验证器队列中时间戳的前缀
+	 */
 	ValidatorQueueKey    = []byte{0x43} // prefix for the timestamps in validator queue
 )
 

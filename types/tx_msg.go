@@ -4,7 +4,12 @@ import (
 	"encoding/json"
 )
 
+// TODO 发起 tx 的msg 入口规范
 // Transactions messages must fulfill the Msg
+// 交易消息必须满足消息
+// 消息是应用程序状态机的主要输入，
+// 它定义了交易的内容并且可以包含任意信息。
+// 开发人员可以通过实现Msg接口来创建消息.
 type Msg interface {
 
 	// Return the message type.

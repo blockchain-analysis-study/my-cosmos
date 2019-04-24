@@ -40,6 +40,7 @@ func newCachedValidator(val types.Validator, marshalled string) cachedValidator 
 // 查询单个 验证人信息
 func (k Keeper) GetValidator(ctx sdk.Context, addr sdk.ValAddress) (validator types.Validator, found bool) {
 	// 根据之前的 xxKey 返回一个 xxx实例
+	// TODO 根据keeper 中定义的 指定的 store类型key 从上下文中返回对应的 store 实例
 	store := ctx.KVStore(k.storeKey)
 
 	// 根据地址去 db 拿值 TODO 什么DB？
@@ -169,7 +170,7 @@ func (k Keeper) AddValidatorTokensAndShares(ctx sdk.Context, validator types.Val
 	// 获取一个 pool 实例
 	pool := k.GetPool(ctx)
 	//
-	// 分别追加 质押 和 委托的钱
+	// 分别追加 质押token 和 占有的股份
 	validator, pool, addedShares = validator.AddTokensFromDel(pool, tokensToAdd)
 
 	// 设置当前验证人的新信息
@@ -341,6 +342,7 @@ func (k Keeper) GetLastValidatorPower(ctx sdk.Context, operator sdk.ValAddress) 
 }
 
 // Set the last validator power.
+// 设置 验证人的最新的权重信息
 func (k Keeper) SetLastValidatorPower(ctx sdk.Context, operator sdk.ValAddress, power int64) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(power)
@@ -478,6 +480,7 @@ func (k Keeper) GetAllMatureValidatorQueue(ctx sdk.Context, currTime time.Time) 
 }
 
 // Unbonds all the unbonding validators that have finished their unbonding period
+// 解锁所有完成 需要解锁期的 需要解锁验证器
 func (k Keeper) UnbondAllMatureValidatorQueue(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 	validatorTimesliceIterator := k.ValidatorQueueIterator(ctx, ctx.BlockHeader().Time)

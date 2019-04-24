@@ -60,6 +60,7 @@ func main() {
 	rootCmd.AddCommand(gaiaInit.InitCmd(ctx, cdc))
 	rootCmd.AddCommand(gaiaInit.CollectGenTxsCmd(ctx, cdc))
 	rootCmd.AddCommand(gaiaInit.TestnetFilesCmd(ctx, cdc))
+	// 注册普通交易命令行
 	rootCmd.AddCommand(gaiaInit.GenTxCmd(ctx, cdc))
 	rootCmd.AddCommand(gaiaInit.AddGenesisAccountCmd(ctx, cdc))
 	rootCmd.AddCommand(gaiaInit.ValidateGenesisCmd(ctx, cdc))

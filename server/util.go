@@ -141,6 +141,7 @@ func AddCommands(
 
 	// 一个 app 构造器函数
 	// 一个 状态及交易的导出器函数
+	// 其实这个就是  newApp()
 	appCreator AppCreator, appExport AppExporter) {
 
 	/**

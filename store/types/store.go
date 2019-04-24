@@ -101,6 +101,8 @@ type CommitMultiStore interface {
 // KVStore
 
 // KVStore is a simple interface to get/set data
+// TODO cosmos 的存储抽象定义
+// 应用程序的基本存储层是KVStore
 type KVStore interface {
 	Store
 

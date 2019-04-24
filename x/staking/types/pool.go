@@ -49,7 +49,9 @@ func (p Pool) BondedRatio() sdk.Dec {
 
 // 更新全局的 pool中记录的被锁定的token及在流通的token
 func (p Pool) notBondedTokensToBonded(bondedTokens sdk.Int) Pool {
+	// 追加被 用来做质押/委托的 Atom
 	p.BondedTokens = p.BondedTokens.Add(bondedTokens)
+	// 减掉被 用来做质押/委托的 Atom
 	p.NotBondedTokens = p.NotBondedTokens.Sub(bondedTokens)
 	if p.NotBondedTokens.IsNegative() {
 		panic(fmt.Sprintf("sanity check: not-bonded tokens negative, pool: %v", p))

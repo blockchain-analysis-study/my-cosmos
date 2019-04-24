@@ -31,18 +31,26 @@ const (
 )
 
 // creates a querier for staking REST endpoints
+/**
+创建一个 staking的rest 节点的查询器
+ */
 func NewQuerier(k keep.Keeper, cdc *codec.Codec) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		switch path[0] {
 		case QueryValidators:
+			// 查询当前所有见证人列表
 			return queryValidators(ctx, cdc, k)
 		case QueryValidator:
+			// 查询单个见证人
 			return queryValidator(ctx, cdc, req, k)
 		case QueryValidatorDelegations:
+			// 查询当前见证人的所有委托人信息
 			return queryValidatorDelegations(ctx, cdc, req, k)
 		case QueryValidatorUnbondingDelegations:
+			// 查询当前验证人 目前处于申请解除委托的委托人信息
 			return queryValidatorUnbondingDelegations(ctx, cdc, req, k)
 		case QueryDelegation:
+			// 查询当前委托人
 			return queryDelegation(ctx, cdc, req, k)
 		case QueryUnbondingDelegation:
 			return queryUnbondingDelegation(ctx, cdc, req, k)
@@ -167,6 +175,9 @@ func queryValidatorDelegations(ctx sdk.Context, cdc *codec.Codec, req abci.Reque
 		return []byte{}, sdk.ErrInternal(fmt.Sprintf("failed to parse params: %s", err))
 	}
 
+	/**
+	查询当前验证人的所有委托人列表
+	 */
 	delegations := k.GetValidatorDelegations(ctx, params.ValidatorAddr)
 
 	res, errRes = codec.MarshalJSONIndent(cdc, delegations)

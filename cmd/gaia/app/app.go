@@ -287,6 +287,13 @@ func MakeCodec() *codec.Codec {
 }
 
 // application updates every end block
+/**
+每个区块执行前都会调的
+
+与 EndBlocker 相呼应
+
+大家写过数据库的底层操作，这个东西应该和它非常类似，不外乎是Begin准备，End结束，清扫资源
+ */
 func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	// mint new tokens for the previous block
 	mint.BeginBlocker(ctx, app.mintKeeper)
@@ -299,6 +306,13 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 	// there is nothing left over in the validator fee pool,
 	// so as to keep the CanWithdrawInvariant invariant.
 	// TODO: This should really happen at EndBlocker.
+	/**
+	惩罚任何双重签名的人。
+	注意：这应该在distr.BeginBlocker之后发生
+	验证器费用池中没有剩余任何内容，以保持CanWithdrawInvariant不变。
+	TODO：这应该发生在EndBlocker上。
+	 */
+	// 在执行区块前 开始惩罚检查
 	tags := slashing.BeginBlocker(ctx, req, app.slashingKeeper)
 
 	return abci.ResponseBeginBlock{
@@ -308,6 +322,8 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 
 // application updates every end block
 // nolint: unparam
+// 在每个区块执行结束前 调用
+// DeliverTx消息处理完成所有的交易后调用，主要用来对验证人集合的结果进行维护.
 func (app *GaiaApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	tags := gov.EndBlocker(ctx, app.govKeeper)
 	validatorUpdates, endBlockerTags := staking.EndBlocker(ctx, app.stakingKeeper)
@@ -361,6 +377,13 @@ func (app *GaiaApp) initFromGenesisState(ctx sdk.Context, genesisState GenesisSt
 				panic(err)
 			}
 			bz := app.cdc.MustMarshalBinaryLengthPrefixed(tx)
+
+			/**
+			TODO 重要
+			交易处理消息DeliverTx，
+			它就是在区块开始被调用前，
+			在这个接口中处理验证人签名的信息
+			 */
 			res := app.BaseApp.DeliverTx(bz)
 			if !res.IsOK() {
 				panic(res.Log)

@@ -32,6 +32,10 @@ func (k Keeper) MaxValidators(ctx sdk.Context) (res uint16) {
 
 // MaxEntries - Maximum number of simultaneous unbonding
 // delegations or redelegations (per pair/trio)
+/**
+MaxEntries  - 委托人 同时取消委托的最大数量
+授权或重新授权（每对/三重奏）
+ */
 func (k Keeper) MaxEntries(ctx sdk.Context) (res uint16) {
 	k.paramstore.Get(ctx, types.KeyMaxEntries, &res)
 	return

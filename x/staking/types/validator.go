@@ -410,6 +410,9 @@ func (v Validator) SetInitialCommission(commission Commission) (Validator, sdk.E
 /**
 AddTokensFromDel将币添加到验证人
 合约：假设代币来自非绑定池。
+
+钱被追加到token字段
+钱的占比被追加到DelegatorShares字段
  */
 func (v Validator) AddTokensFromDel(pool Pool, amount sdk.Int) (Validator, Pool, sdk.Dec) {
 
@@ -418,10 +421,10 @@ func (v Validator) AddTokensFromDel(pool Pool, amount sdk.Int) (Validator, Pool,
 	var issuedShares sdk.Dec
 	if v.DelegatorShares.IsZero() {
 		// the first delegation to a validator sets the exchange rate to one
-		// 这个是第一次被委托的时候，则当前验证人会直接去设置这个数. (精度是： 10^18)
+		// 这个是第一次被委托的时候，则当前验证人的被委托金额占比会直接去设置这个数. (精度是： 10^18)
 		issuedShares = amount.ToDec()
 	} else {
-		// 先 乘 再 除 ？ 这是为什么这么操作？ TODO 这个是何用意? 我还真搞不懂！！！
+		// 计算当前 委托的token占有 验证人身上所有token的占比 ： 总占比 × 当前委托的token / 总的被委托的token == 当前委托的占比
 		issuedShares = v.DelegatorShares.MulInt(amount).QuoInt(v.Tokens)
 	}
 
@@ -488,7 +491,7 @@ func (v Validator) InvalidExRate() bool {
 // calculate the token worth of provided shares
 // 计算入参的数额的代币价值
 func (v Validator) ShareTokens(shares sdk.Dec) sdk.Dec {
-	// 单个股份 × 总质押的钱 / 总委托的股份
+	// 要减持的股份 × 总质押的钱 / 总委托的股份 == 要减持的钱
 	return (shares.MulInt(v.Tokens)).Quo(v.DelegatorShares)
 }
 
@@ -508,6 +511,9 @@ func (v Validator) BondedTokens() sdk.Int {
 // get the Tendermint Power
 // a reduction of 10^6 from validator tokens is applied
 func (v Validator) TendermintPower() int64 {
+
+	// 如果该验证人处于 锁定期间则
+	// 根据验证人身上的token数量计算 该验证人的Tendermint 权重值
 	if v.Status == sdk.Bonded {
 		return v.PotentialTendermintPower()
 	}
@@ -515,7 +521,9 @@ func (v Validator) TendermintPower() int64 {
 }
 
 // potential Tendermint power
+// 根据验证人身上的token数量计算 该验证人的Tendermint 权重值
 func (v Validator) PotentialTendermintPower() int64 {
+	// 根据验证人身上的token数量计算 该验证人的Tendermint 权重值
 	return sdk.TokensToTendermintPower(v.Tokens)
 }
 

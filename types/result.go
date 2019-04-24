@@ -9,6 +9,7 @@ import (
 )
 
 // Result is the union of ResponseFormat and ResponseCheckTx.
+// Result由相应的ABCI result驱动，它包含有关事务的返回值，错误信息，日志和元数据
 type Result struct {
 	// Code is the response code, is stored back on the chain.
 	Code CodeType

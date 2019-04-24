@@ -70,6 +70,7 @@ func NewApp2(logger log.Logger, db dbm.DB) *bapp.BaseApp {
 
 // MsgIssue to allow a registered issuer
 // to issue new coins.
+// 发行 新代币
 type MsgIssue struct {
 	Issuer   sdk.AccAddress
 	Receiver sdk.AccAddress
@@ -214,6 +215,7 @@ func tx2Decoder(cdc *codec.Codec) sdk.TxDecoder {
 
 // Simple anteHandler that ensures msg signers have signed.
 // Provides no replay protection.
+// 在 handler类函数调用之前，调用的函数类型
 func antehandler(ctx sdk.Context, tx sdk.Tx, simulate bool) (_ sdk.Context, _ sdk.Result, abort bool) {
 	appTx, ok := tx.(app2Tx)
 	if !ok {

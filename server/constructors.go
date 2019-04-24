@@ -23,6 +23,9 @@ type (
 	AppExporter func(log.Logger, dbm.DB, io.Writer, int64, bool, []string) (json.RawMessage, []tmtypes.GenesisValidator, error)
 )
 
+/**
+打开 levelDB实例
+ */
 func openDB(rootDir string) (dbm.DB, error) {
 	dataDir := filepath.Join(rootDir, "data")
 	db, err := sdk.NewLevelDB("application", dataDir)

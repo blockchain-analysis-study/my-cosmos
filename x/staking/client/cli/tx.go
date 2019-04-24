@@ -20,16 +20,27 @@ import (
 
 // GetCmdCreateValidator implements the create validator command handler.
 // TODO: Add full description
+/**
+TODO 发起质押
+发起创建一个质押交易
+ */
 func GetCmdCreateValidator(cdc *codec.Codec) *cobra.Command {
+
 	cmd := &cobra.Command{
 		Use:   "create-validator",
 		Short: "create new validator initialized with a self-delegation to it",
+
+		/**
+		TODO 初始化一个【创建质押】的回调函数
+		 */
 		RunE: func(cmd *cobra.Command, args []string) error {
+			//
 			txBldr := authtxb.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().
 				WithCodec(cdc).
 				WithAccountDecoder(cdc)
 
+			// 创建 质押参数
 			txBldr, msg, err := BuildCreateValidatorMsg(cliCtx, txBldr)
 			if err != nil {
 				return err
@@ -221,6 +232,9 @@ $ gaiacli tx staking unbond cosmosvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 }
 
 // BuildCreateValidatorMsg makes a new MsgCreateValidator.
+/**
+BuildCreateValidatorMsg创建一个新的MsgCreateValidator。
+ */
 func BuildCreateValidatorMsg(cliCtx context.CLIContext, txBldr authtxb.TxBuilder) (authtxb.TxBuilder, sdk.Msg, error) {
 	amounstStr := viper.GetString(FlagAmount)
 	amount, err := sdk.ParseCoin(amounstStr)
@@ -228,6 +242,7 @@ func BuildCreateValidatorMsg(cliCtx context.CLIContext, txBldr authtxb.TxBuilder
 		return txBldr, nil, err
 	}
 
+	// 从入参上下文 获取 验证人地址
 	valAddr := cliCtx.GetFromAddress()
 	pkStr := viper.GetString(FlagPubKey)
 
@@ -247,6 +262,10 @@ func BuildCreateValidatorMsg(cliCtx context.CLIContext, txBldr authtxb.TxBuilder
 	rateStr := viper.GetString(FlagCommissionRate)
 	maxRateStr := viper.GetString(FlagCommissionMaxRate)
 	maxChangeRateStr := viper.GetString(FlagCommissionMaxChangeRate)
+
+	/**
+	构建佣金比入参
+	 */
 	commissionMsg, err := buildCommissionMsg(rateStr, maxRateStr, maxChangeRateStr)
 	if err != nil {
 		return txBldr, nil, err
@@ -259,6 +278,10 @@ func BuildCreateValidatorMsg(cliCtx context.CLIContext, txBldr authtxb.TxBuilder
 		return txBldr, nil, fmt.Errorf(staking.ErrMinSelfDelegationInvalid(staking.DefaultCodespace).Error())
 	}
 
+
+	/**
+	构建一个 质押交易入参
+	 */
 	msg := staking.NewMsgCreateValidator(
 		sdk.ValAddress(valAddr), pk, amount, description, commissionMsg, minSelfDelegation,
 	)

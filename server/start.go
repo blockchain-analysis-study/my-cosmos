@@ -44,12 +44,15 @@ func StartCmd(ctx *Context, appCreator AppCreator) *cobra.Command {
 			// 启动一个没有 tendermint 共识的进程 (可能是一个单节点的私有链)
 			if !viper.GetBool(flagWithTendermint) {
 				ctx.Logger.Info("Starting ABCI without Tendermint")
+
+				// appCreator 其实这个就是  newApp()
 				return startStandAlone(ctx, appCreator)
 			}
 
 			ctx.Logger.Info("Starting ABCI with Tendermint")
 
 			// 启动一个内部进程(一个tendermint共识的进程)
+			// appCreator 其实这个就是  newApp()
 			_, err := startInProcess(ctx, appCreator)
 			return err
 		},
@@ -81,6 +84,9 @@ func startStandAlone(ctx *Context, appCreator AppCreator) error {
 	home := viper.GetString("home")
 	traceWriterFile := viper.GetString(flagTraceStore)
 
+	/**
+	打开levelDB实例， 底层用的是 tendermint 的 db库哦 (tendermint 那边用的是 leveldb的)
+	 */
 	db, err := openDB(home)
 	if err != nil {
 		return err
@@ -134,8 +140,15 @@ func startInProcess(ctx *Context, appCreator AppCreator) (*node.Node, error) {
 		return nil, err
 	}
 
+	// appCreator 其实这个就是  newApp()
+	// 所以这里是创建了一个 GaiaApp 实例
+	// 这里面就是 实例化各种 keeper 和 注册各种 模块插件的 路由了
+	// TODO 注意： cosmos-sdk 有自己的 存储
 	app := appCreator(ctx.Logger, db, traceWriter)
 
+	/**
+	获取当前 节点的 nodeKey
+	 */
 	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
 	if err != nil {
 		return nil, err
@@ -143,10 +156,24 @@ func startInProcess(ctx *Context, appCreator AppCreator) (*node.Node, error) {
 
 	UpgradeOldPrivValFile(cfg)
 	// create & start tendermint node
+	/**
+	#################
+	#################
+	TODO 超级重要
+
+	TODO 注意： 这里是实例化了一个 tendermint 节点， 直接用了tendermint的包的哦
+
+	TODO tendermint 节点有自己的存储
+	#################
+	#################
+	 */
 	tmNode, err := node.NewNode(
 		cfg,
+		// 返回的FilePV 其实是一个 tendermint 的types.PrivValidator接口的实例
 		pvm.LoadOrGenFilePV(cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile()),
 		nodeKey,
+
+		// 使用 GaiaApp 创建一个本地的 client 【这部门查看对应的 tendermint 源码】
 		proxy.NewLocalClientCreator(app),
 		node.DefaultGenesisDocProviderFunc(cfg),
 		node.DefaultDBProvider,

@@ -228,6 +228,9 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 
 // application updates every end block
 // nolint: unparam
+/**
+这个是 每个区块结束前都会去调用的方法
+ */
 func (app *GaiaApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	validatorUpdates, tags := staking.EndBlocker(ctx, app.stakingKeeper)
 

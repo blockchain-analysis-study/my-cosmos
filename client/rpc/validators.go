@@ -23,6 +23,7 @@ import (
 // TODO these next two functions feel kinda hacky based on their placement
 
 //ValidatorCommand returns the validator set for a given height
+// ValidatorCommand返回 指定块高的验证器集
 func ValidatorCommand(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tendermint-validator-set [height]",

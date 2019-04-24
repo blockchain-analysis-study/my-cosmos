@@ -31,6 +31,10 @@ func BlockCommand() *cobra.Command {
 	return cmd
 }
 
+/**
+TODO
+使用ABCI 从 tendermint 上获取一个block ？
+ */
 func getBlock(cliCtx context.CLIContext, height *int64) ([]byte, error) {
 	// get the node
 	node, err := cliCtx.GetNode()

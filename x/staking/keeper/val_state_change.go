@@ -26,34 +26,57 @@ import (
 func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []abci.ValidatorUpdate) {
 
 	store := ctx.KVStore(k.storeKey)
+	// 获取配置中最大验证人 数目
 	maxValidators := k.GetParams(ctx).MaxValidators
+
+	// 先声明一个 记录权重的缓存变量
 	totalPower := sdk.ZeroInt()
 
 	// Retrieve the last validator set.
 	// The persistent set is updated later in this function.
 	// (see LastValidatorPowerKey).
+	/**
+	取回(返回) 最新的 验证人集合 (最后一个时间窗口的？)
+	该(持续/固化了的)集合在当前函数之后被更新
+	(参考查看： LastValidatorPowerKey 这个key: 设置 验证人的最新的权重信息)
+	 */
+	// 这是一个 map
 	last := k.getLastValidatorsByAddr(ctx)
 
 	// Iterate over validators, highest power to lowest.
+	// 按照权重索引 最高到最低 返回一个所有验证人的迭代器。
 	iterator := sdk.KVStoreReversePrefixIterator(store, ValidatorsByPowerIndexKey)
 	defer iterator.Close()
+	/**
+	TODO 迭代所有验证人
+	 */
 	for count := 0; iterator.Valid() && count < int(maxValidators); iterator.Next() {
 
 		// fetch the validator
+		// 获取对应的验证人信息
 		valAddr := sdk.ValAddress(iterator.Value())
 		validator := k.mustGetValidator(ctx, valAddr)
 
+		// 如果当前验证人属于处在 slash(被惩罚)锁定中，则说明数据有问题了 ... panic
 		if validator.Jailed {
 			panic("should never retrieve a jailed validator from the power store")
 		}
 
 		// if we get to a zero-power validator (which we don't bond),
 		// there are no more possible bonded validators
+		/**
+		如果我们得到一个 0 权重的验证人（我们没有绑定钱），就没有更多可能的绑定验证器
+
+		TODO 其实就是遍历到 第一个出现 0 权重的验证人为止，或者没有0权重的需要继续把所有验证人遍历完
+		 */
 		if validator.PotentialTendermintPower() == 0 {
 			break
 		}
 
 		// apply the appropriate state change if necessary
+		/**
+		必要时应用适当的状态更改
+		 */
 		switch validator.Status {
 		case sdk.Unbonded:
 			validator = k.unbondedToBonded(ctx, validator)
@@ -66,23 +89,29 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		}
 
 		// fetch the old power bytes
+		// 获取所有 旧的权重 bytes
 		var valAddrBytes [sdk.AddrLen]byte
 		copy(valAddrBytes[:], valAddr[:])
 		oldPowerBytes, found := last[valAddrBytes]
 
 		// calculate the new power bytes
+		// 计算当前 验证人的新的权重 bytes (根据 该验证人的 状态是否为 锁定期及身上的 token数目来定)
 		newPower := validator.TendermintPower()
 		newPowerBytes := k.cdc.MustMarshalBinaryLengthPrefixed(newPower)
 
 		// update the validator set if power has changed
+		// 如果权重又发生改变了，则需要更新 验证人集合
+		// (全部收集到 updates 集合中，最后返回出去)
 		if !found || !bytes.Equal(oldPowerBytes, newPowerBytes) {
 			updates = append(updates, validator.ABCIValidatorUpdate())
 
 			// set validator power on lookup index
+			// 设置 验证人的最新的权重信息
 			k.SetLastValidatorPower(ctx, valAddr, newPower)
 		}
 
 		// validator still in the validator set, so delete from the copy
+		// 从last 这个map中删除 (删除只是不想影响后续的计算)
 		delete(last, valAddrBytes)
 
 		// keep count
@@ -91,25 +120,31 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 	}
 
 	// sort the no-longer-bonded validators
+	// 对不再保留的验证者进行排序
 	noLongerBonded := sortNoLongerBonded(last)
 
 	// iterate through the sorted no-longer-bonded validators
+	// 遍历不在保留的验证人
 	for _, valAddrBytes := range noLongerBonded {
 
 		// fetch the validator
 		validator := k.mustGetValidator(ctx, sdk.ValAddress(valAddrBytes))
 
 		// bonded to unbonding
+		// 将 锁定状态更改为 正处于解锁状态
 		k.bondedToUnbonding(ctx, validator)
 
 		// delete from the bonded validator index
+		// 清除掉 该验证人的最新权重信息
 		k.DeleteLastValidatorPower(ctx, sdk.ValAddress(valAddrBytes))
 
 		// update the validator set
+		// 追加到更改集合 updates中，用于返回出去
 		updates = append(updates, validator.ABCIValidatorUpdateZero())
 	}
 
 	// set total power on lookup index if there are any updates
+	// 如果有任何更新，则在查找索引上设置总 权重
 	if len(updates) > 0 {
 		k.SetLastTotalPower(ctx, totalPower)
 	}
@@ -246,9 +281,12 @@ type validatorsByAddr map[[sdk.AddrLen]byte][]byte
 func (k Keeper) getLastValidatorsByAddr(ctx sdk.Context) validatorsByAddr {
 	last := make(validatorsByAddr)
 	store := ctx.KVStore(k.storeKey)
+
+	// 返回一个 最新的权重信息的验证人信息 的迭代器
 	iterator := sdk.KVStorePrefixIterator(store, LastValidatorPowerKey)
 	defer iterator.Close()
 	// iterate over the last validator set index
+	// 遍历迭代器，组装成 map 返回出去
 	for ; iterator.Valid(); iterator.Next() {
 		var valAddr [sdk.AddrLen]byte
 		// extract the validator address from the key (prefix is 1-byte)

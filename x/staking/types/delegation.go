@@ -13,6 +13,10 @@ import (
 // DVPair is struct that just has a delegator-validator pair with no other data.
 // It is intended to be used as a marshalable pointer. For example, a DVPair can be used to construct the
 // key to getting an UnbondingDelegation from state.
+/**
+DVPair是一个只有一个【委托者 - 验证者】kv对,而没有其他数据的结构。
+它旨在用作可编组指针。 例如，DVPair可用于构建从状态获取UnbondingDelegation的密钥。
+ */
 type DVPair struct {
 	DelegatorAddress sdk.AccAddress
 	ValidatorAddress sdk.ValAddress
@@ -109,17 +113,28 @@ func (d Delegations) String() (out string) {
 
 // UnbondingDelegation stores all of a single delegator's unbonding bonds
 // for a single validator in an time-ordered list
+/**
+UnbondingDelegation存储所有单个委托人的无约束债券
+对于时间排序列表中的单个验证器
+ */
 type UnbondingDelegation struct {
+	// 委托人地址
 	DelegatorAddress sdk.AccAddress             `json:"delegator_address"` // delegator
+	// 该委托人所解除委托的 验证人地址
 	ValidatorAddress sdk.ValAddress             `json:"validator_address"` // validator unbonding from operator addr
+	// 所有解除委托的条目信息
 	Entries          []UnbondingDelegationEntry `json:"entries"`           // unbonding delegation entries
 }
 
 // UnbondingDelegationEntry - entry to an UnbondingDelegation
+// 解除委托的条目信息
 type UnbondingDelegationEntry struct {
+	// 解除委托时的块高
 	CreationHeight int64     `json:"creation_height"` // height which the unbonding took place
+	// 解除委托时的区块时间戳
 	CompletionTime time.Time `json:"completion_time"` // time at which the unbonding delegation will complete
-	InitialBalance sdk.Int   `json:"initial_balance"` // atoms initially scheduled to receive at completion
+	/** TODO  不明白 InitialBalance 和 Balance 的区别 */
+	InitialBalance sdk.Int   `json:"initial_balance"` // atoms initially sch eduled to receive at completion
 	Balance        sdk.Int   `json:"balance"`         // atoms to receive at completion
 }
 

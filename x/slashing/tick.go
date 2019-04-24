@@ -10,6 +10,7 @@ import (
 )
 
 // slashing begin block functionality
+// 惩罚机制 开始 block 功能
 func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) sdk.Tags {
 
 	// Iterate over all the validators which *should* have signed this block
@@ -25,6 +26,9 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) sdk.Ta
 	for _, evidence := range req.ByzantineValidators {
 		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
+			/**
+			处理验证器在同一高度签名两个块
+			 */
 			sk.handleDoubleSign(ctx, evidence.Validator.Address, evidence.Height, evidence.Time, evidence.Validator.Power)
 		default:
 			ctx.Logger().With("module", "x/slashing").Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))

@@ -231,6 +231,9 @@ func (msg MsgEditValidator) ValidateBasic() sdk.Error {
 }
 
 // MsgDelegate - struct for bonding transactions
+/**
+委托交易的请求入参
+ */
 type MsgDelegate struct {
 	DelegatorAddress sdk.AccAddress `json:"delegator_address"`
 	ValidatorAddress sdk.ValAddress `json:"validator_address"`
