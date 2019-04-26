@@ -37,6 +37,7 @@ var (
 	ParamStoreKeyTallyParams   = []byte("tallyparams")
 
 	// TODO: Find another way to implement this without using accounts, or find a cleaner way to implement it using accounts.
+	// TODO：找到另一种方法来实现这一点而不使用帐户，或者找到一种更简洁的方法来使用帐户实现它。
 	DepositedCoinsAccAddr     = sdk.AccAddress(crypto.AddressHash([]byte("govDepositedCoins")))
 	BurnedDepositCoinsAccAddr = sdk.AccAddress(crypto.AddressHash([]byte("govBurnedDepositCoins")))
 )
@@ -126,7 +127,9 @@ func (keeper Keeper) NewTextProposal(ctx sdk.Context, title string, description 
 	depositPeriod := keeper.GetDepositParams(ctx).MaxDepositPeriod
 	proposal.SetDepositEndTime(proposal.GetSubmitTime().Add(depositPeriod))
 
+	// 保存新提案信息
 	keeper.SetProposal(ctx, proposal)
+	// 将提案ID往 非激活提案队列中追加
 	keeper.InsertInactiveProposalQueue(ctx, proposal.GetDepositEndTime(), proposalID)
 	return proposal
 }
@@ -151,11 +154,15 @@ func (keeper Keeper) SetProposal(ctx sdk.Context, proposal Proposal) {
 }
 
 // Implements sdk.AccountKeeper.
+// 清除某提案相关信息
 func (keeper Keeper) DeleteProposal(ctx sdk.Context, proposalID uint64) {
 	store := ctx.KVStore(keeper.storeKey)
 	proposal := keeper.GetProposal(ctx, proposalID)
+	// 非激活队列中清除 提案ID
 	keeper.RemoveFromInactiveProposalQueue(ctx, proposal.GetDepositEndTime(), proposalID)
+	// 激活队列中删除提案ID (因为做成通用的，所有 非激活和激活都需要删一遍)
 	keeper.RemoveFromActiveProposalQueue(ctx, proposal.GetVotingEndTime(), proposalID)
+	// 删掉提案信息
 	store.Delete(KeyProposal(proposalID))
 }
 
@@ -259,14 +266,22 @@ func (keeper Keeper) peekCurrentProposalID(ctx sdk.Context) (proposalID uint64, 
 	return proposalID, nil
 }
 
+// 开始激活提案投票周期
 func (keeper Keeper) activateVotingPeriod(ctx sdk.Context, proposal Proposal) {
+	// 获取当前block的时间戳
 	proposal.SetVotingStartTime(ctx.BlockHeader().Time)
+	// 获取上下文中的 最长投票周期限制
 	votingPeriod := keeper.GetVotingParams(ctx).VotingPeriod
+	// 根据当前block的时间戳和 最长投票期限先算出该提案投票终止时间
 	proposal.SetVotingEndTime(proposal.GetVotingStartTime().Add(votingPeriod))
+	// 更改提案状态为 投票周期
 	proposal.SetStatus(StatusVotingPeriod)
+	// 保存提案变更信息
 	keeper.SetProposal(ctx, proposal)
 
+	// 从非活动(非激活)提案队列中删除提案ID
 	keeper.RemoveFromInactiveProposalQueue(ctx, proposal.GetDepositEndTime(), proposal.GetProposalID())
+	// 追加到 激活提案队列
 	keeper.InsertActiveProposalQueue(ctx, proposal.GetVotingEndTime(), proposal.GetProposalID())
 }
 
@@ -308,11 +323,14 @@ func (keeper Keeper) setTallyParams(ctx sdk.Context, tallyParams TallyParams) {
 // Votes
 
 // Adds a vote on a specific proposal
+// 添加对特定提案的投票
 func (keeper Keeper) AddVote(ctx sdk.Context, proposalID uint64, voterAddr sdk.AccAddress, option VoteOption) sdk.Error {
+	// 先获取提案，非空判断一波
 	proposal := keeper.GetProposal(ctx, proposalID)
 	if proposal == nil {
 		return ErrUnknownProposal(keeper.codespace, proposalID)
 	}
+	// 是否为投票轮状态
 	if proposal.GetStatus() != StatusVotingPeriod {
 		return ErrInactiveProposal(keeper.codespace, proposalID)
 	}
@@ -321,11 +339,15 @@ func (keeper Keeper) AddVote(ctx sdk.Context, proposalID uint64, voterAddr sdk.A
 		return ErrInvalidVote(keeper.codespace, option)
 	}
 
+	/**
+	实例化一个提案的 投票
+	 */
 	vote := Vote{
 		ProposalID: proposalID,
 		Voter:      voterAddr,
 		Option:     option,
 	}
+	// 开始对提案进行投票
 	keeper.setVote(ctx, proposalID, voterAddr, vote)
 
 	return nil
@@ -343,6 +365,7 @@ func (keeper Keeper) GetVote(ctx sdk.Context, proposalID uint64, voterAddr sdk.A
 	return vote, true
 }
 
+// 保存提案投票信息
 func (keeper Keeper) setVote(ctx sdk.Context, proposalID uint64, voterAddr sdk.AccAddress, vote Vote) {
 	store := ctx.KVStore(keeper.storeKey)
 	bz := keeper.cdc.MustMarshalBinaryLengthPrefixed(vote)
@@ -382,37 +405,56 @@ func (keeper Keeper) setDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 
 // Adds or updates a deposit of a specific depositor on a specific proposal
 // Activates voting period when appropriate
+/**
+添加提案上的 质押
+在特定提案上添加或更新特定存款人的存款在适当时激活投票期
+ */
 func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAddr sdk.AccAddress, depositAmount sdk.Coins) (sdk.Error, bool) {
 	// Checks to see if proposal exists
+	// 根据提案ID检查提案是否存在
 	proposal := keeper.GetProposal(ctx, proposalID)
 	if proposal == nil {
 		return ErrUnknownProposal(keeper.codespace, proposalID), false
 	}
 
 	// Check if proposal is still depositable
+	// 检查提案是否仍可存款(质押)
+	// 如果当前提案的状态不属于 质押轮 也不属于 投票轮
 	if (proposal.GetStatus() != StatusDepositPeriod) && (proposal.GetStatus() != StatusVotingPeriod) {
 		return ErrAlreadyFinishedProposal(keeper.codespace, proposalID), false
 	}
 
 	// Send coins from depositor's account to DepositedCoinsAccAddr account
 	// TODO: Don't use an account for this purpose; it's clumsy and prone to misuse.
+	/**
+	将存款人账户中的硬币发送到 DepositedCoinsAccAddr账户
+	TODO：不要为此目的使用帐户; 它很笨拙，容易被滥用。
+	 */
 	_, err := keeper.ck.SendCoins(ctx, depositorAddr, DepositedCoinsAccAddr, depositAmount)
 	if err != nil {
 		return err, false
 	}
 
 	// Update proposal
+	// 更新提案的质押金额信息
 	proposal.SetTotalDeposit(proposal.GetTotalDeposit().Add(depositAmount))
 	keeper.SetProposal(ctx, proposal)
 
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
+	// TODO
+	//
+	// 检查存款是否提供足够的总资金以将提案转换为投票期
+	// 可以看出来，是属于每次增持质押时主动触发  提案状态的变更
 	activatedVotingPeriod := false
+	// 如果现在属于 质押状态 且 所质押的钱满足 最小 提案投票质押金门槛
 	if proposal.GetStatus() == StatusDepositPeriod && proposal.GetTotalDeposit().IsAllGTE(keeper.GetDepositParams(ctx).MinDeposit) {
+		// 开始激活提案投票周期
 		keeper.activateVotingPeriod(ctx, proposal)
 		activatedVotingPeriod = true
 	}
 
 	// Add or update deposit object
+	//
 	currDeposit, found := keeper.GetDeposit(ctx, proposalID, depositorAddr)
 	if !found {
 		newDeposit := Deposit{depositorAddr, proposalID, depositAmount}
@@ -452,18 +494,23 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 // Deletes all the deposits on a specific proposal without refunding them
 func (keeper Keeper) DeleteDeposits(ctx sdk.Context, proposalID uint64) {
 	store := ctx.KVStore(keeper.storeKey)
+	// 根据提案ID 获取该提案上的所有质押
 	depositsIterator := keeper.GetDeposits(ctx, proposalID)
 	defer depositsIterator.Close()
+	// 遍历它们
 	for ; depositsIterator.Valid(); depositsIterator.Next() {
 		deposit := &Deposit{}
 		keeper.cdc.MustUnmarshalBinaryLengthPrefixed(depositsIterator.Value(), deposit)
 
 		// TODO: Find a way to do this without using accounts.
+		// 找到一种更好的方法，不能用addr 来做
+		// 将对应的钱从 提案质押账户 转到 销毁账户 (注意：销毁账户这里其实只是为了做一个记录用的，不上链)
 		_, err := keeper.ck.SendCoins(ctx, DepositedCoinsAccAddr, BurnedDepositCoinsAccAddr, deposit.Amount)
 		if err != nil {
 			panic("should not happen")
 		}
 
+		// 删除掉这些质押信息
 		store.Delete(depositsIterator.Key())
 	}
 }
@@ -503,6 +550,7 @@ func (keeper Keeper) InsertInactiveProposalQueue(ctx sdk.Context, endTime time.T
 }
 
 // removes a proposalID from the Inactive Proposal Queue
+// 从非活动(非激活)提案队列中删除提案ID
 func (keeper Keeper) RemoveFromInactiveProposalQueue(ctx sdk.Context, endTime time.Time, proposalID uint64) {
 	store := ctx.KVStore(keeper.storeKey)
 	store.Delete(KeyInactiveProposalQueueProposal(endTime, proposalID))

@@ -151,13 +151,18 @@ type ProposalQueue []uint64
 // ProposalKind
 
 // Type that represents Proposal Type as a byte
+// 表示 治理的提案类型
 type ProposalKind byte
 
 //nolint
 const (
+	// nil提案
 	ProposalTypeNil             ProposalKind = 0x00
+	// 文本提案
 	ProposalTypeText            ProposalKind = 0x01
+	// 参数改变提案
 	ProposalTypeParameterChange ProposalKind = 0x02
+	// 软件升级提案
 	ProposalTypeSoftwareUpgrade ProposalKind = 0x03
 )
 
@@ -246,14 +251,20 @@ func (pt ProposalKind) Format(s fmt.State, verb rune) {
 // ProposalStatus
 
 // Type that represents Proposal Status as a byte
+// 治理提案的状态类型
 type ProposalStatus byte
 
 //nolint
 const (
+	// nil类型
 	StatusNil           ProposalStatus = 0x00
+	// 提案质押轮
 	StatusDepositPeriod ProposalStatus = 0x01
+	// 提案投票轮
 	StatusVotingPeriod  ProposalStatus = 0x02
+	// 提案通过
 	StatusPassed        ProposalStatus = 0x03
+	// 提案被拒绝
 	StatusRejected      ProposalStatus = 0x04
 )
 
@@ -276,6 +287,7 @@ func ProposalStatusFromString(str string) (ProposalStatus, error) {
 }
 
 // is defined ProposalType?
+// 校验提案的状态
 func validProposalStatus(status ProposalStatus) bool {
 	if status == StatusDepositPeriod ||
 		status == StatusVotingPeriod ||

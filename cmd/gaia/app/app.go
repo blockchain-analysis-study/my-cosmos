@@ -159,7 +159,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		&stakingKeeper, app.feeCollectionKeeper,
 	)
 
-	// 这个，额，我也不知道干嘛的
+	// distribute 指 发布新币的管理器 ？？
 	app.distrKeeper = distr.NewKeeper(
 		app.cdc,
 		app.keyDistr,
@@ -301,6 +301,7 @@ func MakeCodec() *codec.Codec {
  */
 func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	// mint new tokens for the previous block
+	//
 	mint.BeginBlocker(ctx, app.mintKeeper)
 
 	// distribute rewards for the previous block
@@ -325,15 +326,18 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 	}
 }
 
+// TODO ################
 // TODO 超级重要
 // application updates every end block
 // nolint: unparam
 // 在每个区块执行结束前 调用
 // DeliverTx消息处理完成所有的交易后调用，主要用来对验证人集合的结果进行维护.
 func (app *GaiaApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+
+	// 先调一波链上治理的接口
 	tags := gov.EndBlocker(ctx, app.govKeeper)
 
-	// staking 的验证人变更的逻辑在这里哦
+	// TODO staking 的验证人变更的逻辑在这里哦
 	validatorUpdates, endBlockerTags := staking.EndBlocker(ctx, app.stakingKeeper)
 	tags = append(tags, endBlockerTags...)
 

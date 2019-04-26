@@ -167,6 +167,8 @@ func NewBaseSendKeeper(ak auth.AccountKeeper,
 }
 
 // SendCoins moves coins from one account to another
+// SendCoins将硬币从一个账户转移到另一个账户
+// 类似与以太坊的 State.AddBalance()
 func (keeper BaseSendKeeper) SendCoins(
 	ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins,
 ) (sdk.Tags, sdk.Error) {

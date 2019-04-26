@@ -76,14 +76,20 @@ func (d Deposit) Empty() bool {
 }
 
 // Type that represents VoteOption as a byte
+// 提案的投票类型
 type VoteOption byte
 
 //nolint
 const (
+	// 空投
 	OptionEmpty      VoteOption = 0x00
+	// 投了 yes
 	OptionYes        VoteOption = 0x01
+	// 不懂
 	OptionAbstain    VoteOption = 0x02
+	// 投了No
 	OptionNo         VoteOption = 0x03
+	// 不懂
 	OptionNoWithVeto VoteOption = 0x04
 )
 
@@ -104,6 +110,7 @@ func VoteOptionFromString(str string) (VoteOption, error) {
 }
 
 // Is defined VoteOption
+// 校验提案投票信息
 func validVoteOption(option VoteOption) bool {
 	if option == OptionYes ||
 		option == OptionAbstain ||

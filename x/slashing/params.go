@@ -93,6 +93,7 @@ func (k Keeper) MaxEvidenceAge(ctx sdk.Context) (res time.Duration) {
 }
 
 // SignedBlocksWindow - sliding window for downtime slashing
+// SignedBlocksWindow  - 用于停机削减的滑动窗口
 func (k Keeper) SignedBlocksWindow(ctx sdk.Context) (res int64) {
 	k.paramspace.Get(ctx, KeySignedBlocksWindow, &res)
 	return

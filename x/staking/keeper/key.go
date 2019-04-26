@@ -113,6 +113,7 @@ func GetLastValidatorPowerKey(operator sdk.ValAddress) []byte {
 // NOTE the larger values are of higher value
 // nolint: unparam
 /**
+TODO ############ $$$$$$$$$$$
 TODO 非常重要的一步 计算权重
 获得验证人的权重排名
 注意，较大的值具有较高的值

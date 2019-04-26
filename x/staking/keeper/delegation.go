@@ -614,7 +614,10 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 		// 如果根据剩余的质押的 占股份额算出来的钱 小于 质押的最小门槛
 		validator.ShareTokens(delegation.Shares).TruncateInt().LT(validator.MinSelfDelegation) {
 
-		// 进行 slash 锁定
+		/**
+		TODO
+		进行 slash 锁定
+		 */
 		k.jailValidator(ctx, validator)
 
 		// 获取验证人 信息

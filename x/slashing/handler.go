@@ -66,6 +66,9 @@ func handleMsgUnjail(ctx sdk.Context, msg MsgUnjail, k Keeper) sdk.Result {
 	}
 
 	// unjail the validator
+	/**
+	解锁处于惩罚锁定期的 验证人
+	 */
 	k.validatorSet.Unjail(ctx, consAddr)
 
 	tags := sdk.NewTags(

@@ -31,15 +31,22 @@ func (k Keeper) IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index in
 	store := ctx.KVStore(k.storeKey)
 	maxValidators := k.MaxValidators(ctx)
 
+	// 获取所有 权重值的验证人 迭代器
 	iterator := sdk.KVStoreReversePrefixIterator(store, ValidatorsByPowerIndexKey)
 	defer iterator.Close()
 
 	i := int64(0)
 	for ; iterator.Valid() && i < int64(maxValidators); iterator.Next() {
 		address := iterator.Value()
+		// 回去验证人详情
 		validator := k.mustGetValidator(ctx, address)
 
+		// 查看验证人是都为锁定状态
 		if validator.Status == sdk.Bonded {
+			// 执行回调
+			/**
+			XXX是否可以将验证器未曝光的字段写入？
+			 */
 			stop := fn(i, validator) // XXX is this safe will the validator unexposed fields be able to get written to?
 			if stop {
 				break

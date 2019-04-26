@@ -16,19 +16,30 @@ const (
 	MaxTitleLength       int = 140
 )
 
+/**
+Emmmmmmm 这个到底何用意
+ */
 var _, _, _ sdk.Msg = MsgSubmitProposal{}, MsgDeposit{}, MsgVote{}
 
 // MsgSubmitProposal
 // 提交一个提案 入参
 type MsgSubmitProposal struct {
+	// 提案的标题
 	Title          string         `json:"title"`           //  Title of the proposal
+	// 这个是文本格式的 提案内容
 	Description    string         `json:"description"`     //  Description of the proposal
+	// 标识提案的类型
+	// 目前只有四种提案类型，代码中只用到三种
+	// nil提案类型、 文本提案、 参数改变提案、 软件升级提案
 	ProposalType   ProposalKind   `json:"proposal_type"`   //  Type of proposal. Initial set {PlainTextProposal, SoftwareUpgradeProposal}
+	// 发起提案者的 地址
 	Proposer       sdk.AccAddress `json:"proposer"`        //  Address of the proposer
+	// 提案发起人支付的初始存款。 必须严格积极。
 	InitialDeposit sdk.Coins      `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
 }
 
 func NewMsgSubmitProposal(title, description string, proposalType ProposalKind, proposer sdk.AccAddress, initialDeposit sdk.Coins) MsgSubmitProposal {
+	//
 	return MsgSubmitProposal{
 		Title:          title,
 		Description:    description,
@@ -38,7 +49,7 @@ func NewMsgSubmitProposal(title, description string, proposalType ProposalKind, 
 	}
 }
 
-//nolint
+// nolint
 func (msg MsgSubmitProposal) Route() string { return RouterKey }
 func (msg MsgSubmitProposal) Type() string  { return TypeMsgSubmitProposal }
 

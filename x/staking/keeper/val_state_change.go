@@ -208,12 +208,15 @@ func (k Keeper) unbondingToUnbonded(ctx sdk.Context, validator types.Validator) 
 }
 
 // send a validator to jail
-// 设置该验证人为 锁定
+/**
+TODO 重要
+设置该验证人为 锁定
+ */
 func (k Keeper) jailValidator(ctx sdk.Context, validator types.Validator) {
 	if validator.Jailed {
 		panic(fmt.Sprintf("cannot jail already jailed validator, validator: %v\n", validator))
 	}
-
+	// 将惩罚锁定标识位更改为 true
 	validator.Jailed = true
 	k.SetValidator(ctx, validator)
 	k.DeleteValidatorByPowerIndex(ctx, validator)

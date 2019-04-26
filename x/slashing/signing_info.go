@@ -81,6 +81,7 @@ func (k Keeper) setValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.Con
 }
 
 // Stored by *validator* address (not operator address)
+// 存储*验证器*地址（不是 操作者地址）
 func (k Keeper) clearValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress) {
 	store := ctx.KVStore(k.storeKey)
 	iter := sdk.KVStorePrefixIterator(store, GetValidatorMissedBlockBitArrayPrefixKey(address))
@@ -95,6 +96,7 @@ type ValidatorSigningInfo struct {
 	StartHeight         int64     `json:"start_height"`          // height at which validator was first a candidate OR was unjailed
 	IndexOffset         int64     `json:"index_offset"`          // index offset into signed block bit array
 	JailedUntil         time.Time `json:"jailed_until"`          // timestamp validator cannot be unjailed until
+	// 验证器是否已被逻辑删除（从验证器集中删除）
 	Tombstoned          bool      `json:"tombstoned"`            // whether or not a validator has been tombstoned (killed out of validator set)
 	MissedBlocksCounter int64     `json:"missed_blocks_counter"` // missed blocks counter (to avoid scanning the array every time)
 }
