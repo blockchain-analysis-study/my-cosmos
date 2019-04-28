@@ -8,6 +8,7 @@ import (
 )
 
 // Stored by *validator* address (not operator address)
+// 存储*验证器*地址（不是 质押的地址） 这里的地址是 node 的 addr
 func (k Keeper) getValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info ValidatorSigningInfo, found bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(GetValidatorSigningInfoKey(address))

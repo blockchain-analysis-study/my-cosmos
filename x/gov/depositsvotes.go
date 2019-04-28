@@ -9,8 +9,11 @@ import (
 
 // Vote
 type Vote struct {
+	// 发起治理投票的 地址 (选民)
 	Voter      sdk.AccAddress `json:"voter"`       //  address of the voter
+	// 被投票的 提议ID
 	ProposalID uint64         `json:"proposal_id"` //  proposalID of the proposal
+	// 投票类型
 	Option     VoteOption     `json:"option"`      //  option from OptionSet chosen by the voter
 }
 
@@ -83,14 +86,16 @@ type VoteOption byte
 const (
 	// 空投
 	OptionEmpty      VoteOption = 0x00
-	// 投了 yes
+	// 非弃权选民投了 yes
 	OptionYes        VoteOption = 0x01
-	// 不懂
+	// 弃权
 	OptionAbstain    VoteOption = 0x02
-	// 投了No
+	// 非弃权选民投了No
 	OptionNo         VoteOption = 0x03
-	// 不懂
+	// 否决
 	OptionNoWithVeto VoteOption = 0x04
+
+	// TODO 这里我不明白 否决 (OptionNoWithVeto) 和 非弃权投NO (OptionNo) 的区别？
 )
 
 // String to proposalType byte.  Returns ff if invalid.

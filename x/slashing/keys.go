@@ -22,6 +22,7 @@ const (
 
 // key prefix bytes
 var (
+	// 感觉 节点公钥生成的node地址作为key，存储该地址的签名信息的key前缀
 	ValidatorSigningInfoKey         = []byte{0x01} // Prefix for signing info
 	ValidatorMissedBlockBitArrayKey = []byte{0x02} // Prefix for missed block bit array
 	ValidatorSlashingPeriodKey      = []byte{0x03} // Prefix for slashing period
@@ -29,6 +30,7 @@ var (
 )
 
 // stored by *Tendermint* address (not operator address)
+// 存储* Tendermint *地址（非 质押地址）这里是指  由公钥生成的 node的addr
 func GetValidatorSigningInfoKey(v sdk.ConsAddress) []byte {
 	return append(ValidatorSigningInfoKey, v.Bytes()...)
 }

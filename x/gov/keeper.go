@@ -474,14 +474,21 @@ func (keeper Keeper) GetDeposits(ctx sdk.Context, proposalID uint64) sdk.Iterato
 }
 
 // Refunds and deletes all the deposits on a specific proposal
+//
+// 退还并删除特定提案上的所有存款
 func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 	store := ctx.KVStore(keeper.storeKey)
+	// 获取对应提议上的所有 质押金额迭代器
 	depositsIterator := keeper.GetDeposits(ctx, proposalID)
 	defer depositsIterator.Close()
 	for ; depositsIterator.Valid(); depositsIterator.Next() {
 		deposit := &Deposit{}
 		keeper.cdc.MustUnmarshalBinaryLengthPrefixed(depositsIterator.Value(), deposit)
 
+		// 将钱退回到 发起质押的账户中
+		// TODO 这里我有疑问，为什么那些非活动的提议中退回金额是 DepositedCoinsAccAddr -> BurnedDepositCoinsAccAddr
+		// TODO 而不是像这里的 DepositedCoinsAccAddr -> deposit.Depositor ？？？？
+		// TODO 即: 下面的 DeleteDeposits 方法中的所作所为
 		_, err := keeper.ck.SendCoins(ctx, DepositedCoinsAccAddr, deposit.Depositor, deposit.Amount)
 		if err != nil {
 			panic("should not happen")
@@ -492,6 +499,8 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 }
 
 // Deletes all the deposits on a specific proposal without refunding them
+//
+// 删除特定提案上的所有存款而不退款
 func (keeper Keeper) DeleteDeposits(ctx sdk.Context, proposalID uint64) {
 	store := ctx.KVStore(keeper.storeKey)
 	// 根据提案ID 获取该提案上的所有质押

@@ -53,25 +53,35 @@ func EndBlocker(ctx sdk.Context, keeper Keeper) sdk.Tags {
 		var proposalID uint64
 
 		keeper.cdc.MustUnmarshalBinaryLengthPrefixed(activeIterator.Value(), &proposalID)
-		// 跟填好获取出 激活的提案信息
+		// 跟填好获取出 激活的提案信息 (这里是Proposal接口的实现，目前是唯一的实现 TextProposal)
 		activeProposal := keeper.GetProposal(ctx, proposalID)
 
-
+		// passes: 是否通过
+		// tallyResults: 计算的结果
 		passes, tallyResults := tally(ctx, keeper, activeProposal)
 
 		var tagValue string
+
+		// 如果 通过了 提议，则 退还并删除特定提案上的所有存款
 		if passes {
 			keeper.RefundDeposits(ctx, activeProposal.GetProposalID())
 			activeProposal.SetStatus(StatusPassed)
 			tagValue = tags.ActionProposalPassed
 		} else {
+
+			// 否则， 删除特定提案上的所有存款而不退款
+			// TODO NOTE: 之所以这么做是为了人人们不要 随意的发起 提议
 			keeper.DeleteDeposits(ctx, activeProposal.GetProposalID())
 			activeProposal.SetStatus(StatusRejected)
 			tagValue = tags.ActionProposalRejected
 		}
 
+		// 设置最终的结果
 		activeProposal.SetFinalTallyResult(tallyResults)
+		// 设置通过的提案信息
 		keeper.SetProposal(ctx, activeProposal)
+
+		// 从 激活队列中一出
 		keeper.RemoveFromActiveProposalQueue(ctx, activeProposal.GetVotingEndTime(), activeProposal.GetProposalID())
 
 		logger.Info(

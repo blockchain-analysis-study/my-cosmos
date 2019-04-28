@@ -158,7 +158,7 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	signInfo.JailedUntil = DoubleSignJailEndTime
 
 	// Set validator signing info
-	// 保存 该验证人的签名信息
+	// 保存 该验证人的签名信息 key(公钥地址) -> value(签名信息)
 	k.SetValidatorSigningInfo(ctx, consAddr, signInfo)
 }
 

@@ -79,20 +79,42 @@ func ProposalEqual(proposalA Proposal, proposalB Proposal) bool {
 }
 
 // Text Proposals
+/**
+文本 提议
+TODO 目前Proposal接口的实现，只有这个
+ */
 type TextProposal struct {
+	// 提议ID
 	ProposalID   uint64       `json:"proposal_id"`   //  ID of the proposal
+	// 提议主题
 	Title        string       `json:"title"`         //  Title of the proposal
+	// 真正的提议内容(文本的内容)
 	Description  string       `json:"description"`   //  Description of the proposal
+
+	// 提议的类型
 	ProposalType ProposalKind `json:"proposal_type"` //  Type of proposal. Initial set {PlainTextProposal, SoftwareUpgradeProposal}
 
+	// 该提议的状态
 	Status           ProposalStatus `json:"proposal_status"`    //  Status of the Proposal {Pending, Active, Passed, Rejected}
+
+	// 该提议的最终计算结果详情
 	FinalTallyResult TallyResult    `json:"final_tally_result"` //  Result of Tallys
 
+	// 提议的提交时间
+	// 包含TxGovSubmitProposal的块的时间
 	SubmitTime     time.Time `json:"submit_time"`      //  Time of the block where TxGovSubmitProposal was included
+
+	// 如果未达到存款金额，提案将到期的时间
 	DepositEndTime time.Time `json:"deposit_end_time"` // Time that the Proposal would expire if deposit amount isn't met
+
+	// 此提案的当前存款。 初始值在InitialDeposit中设置
 	TotalDeposit   sdk.Coins `json:"total_deposit"`    //  Current deposit on this proposal. Initial value is set at InitialDeposit
 
+	// 到达MinDeposit的块的时间。 -1如果未达到MinDeposit
 	VotingStartTime time.Time `json:"voting_start_time"` //  Time of the block where MinDeposit was reached. -1 if MinDeposit is not reached
+
+	// 此提案的VotingPeriod将结束并且将计算投票的时间
+	// 该提议的投票轮的到期时间
 	VotingEndTime   time.Time `json:"voting_end_time"`   // Time that the VotingPeriod for this proposal will end and votes will be tallied
 }
 

@@ -96,6 +96,7 @@ func (k Keeper) ValidatorByConsAddr(ctx sdk.Context, addr sdk.ConsAddress) sdk.V
 }
 
 // total staking tokens supply which is bonded
+// 返回 pool 中记录的，目前所有 staking 锁定的 token数目
 func (k Keeper) TotalBondedTokens(ctx sdk.Context) sdk.Int {
 	pool := k.GetPool(ctx)
 	return pool.BondedTokens
@@ -140,15 +141,27 @@ func (k Keeper) Delegation(ctx sdk.Context, addrDel sdk.AccAddress, addrVal sdk.
 }
 
 // iterate through all of the delegations from a delegator
+//
+// 迭代委托人的所有委托信息
 func (k Keeper) IterateDelegations(ctx sdk.Context, delAddr sdk.AccAddress,
+
+	// 入参回调函数
 	fn func(index int64, del sdk.Delegation) (stop bool)) {
 
+
+	// 先获取对应的存储实例
 	store := ctx.KVStore(k.storeKey)
+	// 获取 委托人的key前缀
 	delegatorPrefixKey := GetDelegationsKey(delAddr)
+	// 获取该委托人的所有委托信息
 	iterator := sdk.KVStorePrefixIterator(store, delegatorPrefixKey) // smallest to largest
 	defer iterator.Close()
+
+	// 遍历该委托人的所有委托信息
 	for i := int64(0); iterator.Valid(); iterator.Next() {
 		del := types.MustUnmarshalDelegation(k.cdc, iterator.Value())
+
+		// 调用回调函数
 		stop := fn(i, del)
 		if stop {
 			break

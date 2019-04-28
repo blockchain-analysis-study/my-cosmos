@@ -343,6 +343,7 @@ func (app *GaiaApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.R
 
 	app.assertRuntimeInvariants()
 
+	// 最后这些只是会被 返回到 tendermint层的
 	return abci.ResponseEndBlock{
 		ValidatorUpdates: validatorUpdates,
 		Tags:             tags,

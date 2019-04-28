@@ -209,7 +209,7 @@ func (aa AccAddress) Format(s fmt.State, verb rune) {
 ValAddress 定义了一个围绕字节的包装器，用于表示验证器的运算符。
 ########  当封送成字符串或JSON时，它使用Bech32。  ########
  */
-type ValAddress []byte
+type ValAddress []byte  // 注意这个和  type ConsAddress []byte 的区别
 
 // ValAddressFromHex creates a ValAddress from a hex string.
 func ValAddressFromHex(address string) (addr ValAddress, err error) {
@@ -343,7 +343,7 @@ func (va ValAddress) Format(s fmt.State, verb rune) {
 // ConsAddress定义了:
 // 一个包含字母的包装器，用于表示 共识节点。
 // 当封送成字符串或JSON时，它使用Bech32。
-type ConsAddress []byte
+type ConsAddress []byte  // 注意： 这个和 type ValAddress []byte 的区别
 
 // ConsAddressFromHex creates a ConsAddress from a hex string.
 func ConsAddressFromHex(address string) (addr ConsAddress, err error) {
