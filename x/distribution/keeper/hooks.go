@@ -17,7 +17,17 @@ func (k Keeper) Hooks() Hooks { return Hooks{k} }
 // nolint
 // 初始化一个验证人的各种信息
 func (h Hooks) AfterValidatorCreated(ctx sdk.Context, valAddr sdk.ValAddress) {
+	// 往 全局 keeper 中追加 该validator
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)
+	/**
+	####### TODO  很重要的一步
+	初始化新验证者的奖励
+
+	1、设置了 历史奖励
+	2、设置了 当前奖励
+	3、设置了 累计佣金
+	4、设置了 出块奖励
+	*/
 	h.k.initializeValidator(ctx, val)
 }
 func (h Hooks) BeforeValidatorModified(ctx sdk.Context, valAddr sdk.ValAddress) {
@@ -74,6 +84,7 @@ func (h Hooks) AfterValidatorRemoved(ctx sdk.Context, _ sdk.ConsAddress, valAddr
 	h.k.DeleteValidatorCurrentRewards(ctx, valAddr)
 }
 func (h Hooks) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
+	// 获取 验证人
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)
 
 	// increment period

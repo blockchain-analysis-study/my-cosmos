@@ -26,6 +26,7 @@ var (
 	ValidatorSigningInfoKey         = []byte{0x01} // Prefix for signing info
 	ValidatorMissedBlockBitArrayKey = []byte{0x02} // Prefix for missed block bit array
 	ValidatorSlashingPeriodKey      = []byte{0x03} // Prefix for slashing period
+	// 设置目前 验证人列表中的相关 pubkey addr 的key前缀
 	AddrPubkeyRelationKey           = []byte{0x04} // Prefix for address-pubkey relation
 )
 

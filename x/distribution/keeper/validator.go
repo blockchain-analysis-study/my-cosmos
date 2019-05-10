@@ -48,7 +48,7 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 	var current sdk.DecCoins
 
 	// 如果当前 验证人被质押的 token 为 0
-	// 则，修复要证人该得的钱，转到 社区奖励池中
+	// 则 将验证人该得的钱 转到 社区奖励池中
 	if val.GetTokens().IsZero() {
 
 		// can't calculate ratio for zero-token validators
@@ -57,13 +57,13 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 		// 我们改为添加到社区池
 		feePool := k.GetFeePool(ctx)
 
-		// 获取 验证人的优秀奖励 ？？ 这个是什么鬼？ (应该是指： 出块奖励吧？)
+		// 获取 验证人的优秀奖励
 		outstanding := k.GetValidatorOutstandingRewards(ctx, val.GetOperator())
 
-		// 将当前生成的奖励追加到 尚未花费的社区资金池
+		// 将 验证人的当前奖励 转到 社区池中
 		feePool.CommunityPool = feePool.CommunityPool.Add(rewards.Rewards)
 
-		// 扣减吊验证人的 优秀奖励？ (我的理解是: 优秀奖励是不是指, 本来应该奖励给 验证人的出块奖励??)
+		// 扣减 验证人的 优秀奖励
 		outstanding = outstanding.Sub(rewards.Rewards)
 
 		// 分别更新
@@ -80,7 +80,7 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 	}
 
 	// fetch historical rewards for last period
-	// 获取当前 验证人的上一期的历史奖励
+	// 获取当前 验证人的历史奖励 (用当前周期 - 1)
 	historical := k.GetValidatorHistoricalRewards(ctx, val.GetOperator(), rewards.Period-1).CumulativeRewardRatio
 
 	// decrement reference count

@@ -12,12 +12,14 @@ import (
 // defined.
 func (ctx CLIContext) BroadcastTx(txBytes []byte) (res sdk.TxResponse, err error) {
 	if ctx.Async {
+		// 异步发广播
 		if res, err = ctx.BroadcastTxAsync(txBytes); err != nil {
 			return
 		}
 		return
 	}
 
+	// 同步发广播
 	if res, err = ctx.BroadcastTxAndAwaitCommit(txBytes); err != nil {
 		return
 	}
@@ -32,7 +34,7 @@ func (ctx CLIContext) BroadcastTxAndAwaitCommit(tx []byte) (sdk.TxResponse, erro
 	if err != nil {
 		return sdk.TxResponse{}, err
 	}
-
+	// todo 广播交易到其他节点 源码查看tendermint 部分
 	res, err := node.BroadcastTxCommit(tx)
 	if err != nil {
 		return sdk.NewResponseFormatBroadcastTxCommit(res), err
@@ -71,6 +73,7 @@ func (ctx CLIContext) BroadcastTxAsync(tx []byte) (sdk.TxResponse, error) {
 		return sdk.TxResponse{}, err
 	}
 
+	// TODO 当前节点向其他节点 广播tx 源码看tendermint 部分
 	res, err := node.BroadcastTxAsync(tx)
 	if err != nil {
 		return sdk.NewResponseFormatBroadcastTx(res), err

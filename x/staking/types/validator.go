@@ -308,16 +308,23 @@ func (d Description) UpdateDescription(d2 Description) (Description, sdk.Error) 
 }
 
 // EnsureLength ensures the length of a validator's description.
+/**
+校验 验证人的描述信息中各个字段的长度
+ */
 func (d Description) EnsureLength() (Description, sdk.Error) {
+	// 名称限长
 	if len(d.Moniker) > MaxMonikerLength {
 		return d, ErrDescriptionLength(DefaultCodespace, "moniker", len(d.Moniker), MaxMonikerLength)
 	}
+	// 身份签名限长
 	if len(d.Identity) > MaxIdentityLength {
 		return d, ErrDescriptionLength(DefaultCodespace, "identity", len(d.Identity), MaxIdentityLength)
 	}
+	// URL 限长
 	if len(d.Website) > MaxWebsiteLength {
 		return d, ErrDescriptionLength(DefaultCodespace, "website", len(d.Website), MaxWebsiteLength)
 	}
+	// 描述信息限长
 	if len(d.Details) > MaxDetailsLength {
 		return d, ErrDescriptionLength(DefaultCodespace, "details", len(d.Details), MaxDetailsLength)
 	}
@@ -482,13 +489,13 @@ func (v Validator) RemoveDelShares(pool Pool, delShares sdk.Dec) (Validator, Poo
 // Validator loses all tokens due to slashing. In this case,
 // make all future delegations invalid.
 /**
-在某些情况下，每日佣金调整 变得无效 ?
-例如 如果Validator由于削减而丢失所有令牌。
-在这种情况下，使委托失效。
+在某些情况下，更改被委托的钱以及占比是无效的，
+如果 因为Validator由于削减而丢失所有令牌。
+这种情况下，所有的委托将失效
  */
 func (v Validator) InvalidExRate() bool {
-	// 如果 验证人身上的 token 为0，且被委托的钱 > 0.
-	// 则 每日佣金调整 无效 ?
+	// 如果 验证人身上的 token 为0，且被委托的股权占有 > 0.
+	// 这种情况只会发生在 计算有bug 和 验证人被 slashing 时
 	return v.Tokens.IsZero() && v.DelegatorShares.IsPositive()
 }
 

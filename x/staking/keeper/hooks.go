@@ -7,6 +7,14 @@ import (
 // AfterValidatorCreated - call hook if registered
 func (k Keeper) AfterValidatorCreated(ctx sdk.Context, valAddr sdk.ValAddress) {
 	if k.hooks != nil {
+		// 设置全局 keeper 中的 validator
+		//
+		// 1、设置了 历史奖励
+		// 2、设置了 当前奖励
+		// 3、设置了 累计佣金
+		// 4、设置了 出块奖励
+		//
+		// 设置 addr -> pubkey
 		k.hooks.AfterValidatorCreated(ctx, valAddr)
 	}
 }

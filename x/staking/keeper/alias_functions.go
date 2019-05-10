@@ -78,6 +78,9 @@ func (k Keeper) IterateLastValidators(ctx sdk.Context, fn func(index int64, vali
 }
 
 // get the sdk.validator for a particular address
+// 从全局 Keeper 中获取 validator
+// 无 则拉DB 的且缓存到 Keeper 中
+// 有 则直接返回
 func (k Keeper) Validator(ctx sdk.Context, address sdk.ValAddress) sdk.Validator {
 	val, found := k.GetValidator(ctx, address)
 	if !found {

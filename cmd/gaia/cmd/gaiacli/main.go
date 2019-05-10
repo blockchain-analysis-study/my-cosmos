@@ -88,7 +88,7 @@ func main() {
 		client.ConfigCmd(app.DefaultCLIHome),
 		// 查询的命令行
 		queryCmd(cdc, mc),
-		// 发普通交易的命令行
+		// TODO 发交易的命令行 ()
 		txCmd(cdc, mc),
 		client.LineBreak,
 		lcd.ServeCommand(cdc, registerRoutes),
@@ -102,6 +102,9 @@ func main() {
 	// Add flags and prefix all env exposed with GA
 	executor := cli.PrepareMainCmd(rootCmd, "GA", app.DefaultCLIHome)
 
+	/**
+	所有的 cmd 都在这里执行
+	 */
 	err := executor.Execute()
 	if err != nil {
 		fmt.Printf("Failed executing CLI command: %s, exiting...\n", err)
@@ -132,6 +135,11 @@ func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 	return queryCmd
 }
 
+
+/**
+TODO 重要
+交易命令行
+ */
 func txCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:   "tx",
@@ -139,16 +147,24 @@ func txCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 	}
 
 	txCmd.AddCommand(
+		// TODO 普通交易
 		bankcmd.SendTxCmd(cdc),
 		client.LineBreak,
+		// 单签名
 		authcmd.GetSignCommand(cdc),
+		// 多签名
 		authcmd.GetMultiSignCommand(cdc),
+		// tx广播的命令行
 		tx.GetBroadcastCommand(cdc),
+		// 编码 cmd
 		tx.GetEncodeCommand(cdc),
 		client.LineBreak,
 	)
 
 	for _, m := range mc {
+		/**
+		TODO 设置 获取回来的 其他类型交易 (如: staking  slashing  governonce 等等)
+		 */
 		txCmd.AddCommand(m.GetTxCmd())
 	}
 

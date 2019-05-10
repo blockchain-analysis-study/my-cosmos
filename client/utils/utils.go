@@ -33,6 +33,7 @@ func GenerateOrBroadcastMsgs(cliCtx context.CLIContext, txBldr authtxb.TxBuilder
 	if cliCtx.GenerateOnly {
 		return PrintUnsignedStdTx(txBldr, cliCtx, msgs, offline)
 	}
+	// 这里会广播Tx 给其他tendermint节点
 	return CompleteAndBroadcastTxCLI(txBldr, cliCtx, msgs)
 }
 
@@ -91,6 +92,9 @@ func CompleteAndBroadcastTxCLI(txBldr authtxb.TxBuilder, cliCtx context.CLIConte
 	}
 
 	// broadcast to a Tendermint node
+	/**
+	TODO 将这个交易广播大欧其他 tendermint 节点
+	 */
 	res, err := cliCtx.BroadcastTx(txBytes)
 	cliCtx.PrintOutput(res)
 	return err

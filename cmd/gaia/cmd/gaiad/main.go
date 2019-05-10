@@ -23,6 +23,8 @@ import (
 )
 
 // cosmos的主入口
+//
+// release： v0.34.0
 func main() {
 
 	// 开始初始化各种 (自定义的)编码解码器
@@ -60,8 +62,10 @@ func main() {
 	rootCmd.AddCommand(gaiaInit.InitCmd(ctx, cdc))
 	rootCmd.AddCommand(gaiaInit.CollectGenTxsCmd(ctx, cdc))
 	rootCmd.AddCommand(gaiaInit.TestnetFilesCmd(ctx, cdc))
-	// 注册普通交易命令行
+	// TODO 注册普通交易命令行
 	rootCmd.AddCommand(gaiaInit.GenTxCmd(ctx, cdc))
+
+
 	rootCmd.AddCommand(gaiaInit.AddGenesisAccountCmd(ctx, cdc))
 	rootCmd.AddCommand(gaiaInit.ValidateGenesisCmd(ctx, cdc))
 	rootCmd.AddCommand(client.NewCompletionCmd(rootCmd, true))

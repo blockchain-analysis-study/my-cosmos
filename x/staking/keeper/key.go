@@ -114,7 +114,16 @@ func GetLastValidatorPowerKey(operator sdk.ValAddress) []byte {
 // nolint: unparam
 /**
 TODO ############ $$$$$$$$$$$
+TODO ############ $$$$$$$$$$$
+TODO ############ $$$$$$$$$$$
+TODO ############ $$$$$$$$$$$
+
 TODO 非常重要的一步 计算权重
+
+TODO ############ $$$$$$$$$$$
+TODO ############ $$$$$$$$$$$
+TODO ############ $$$$$$$$$$$
+TODO ############ $$$$$$$$$$$
 获得验证人的权重排名
 注意，较大的值具有较高的值
 nolint：unparam

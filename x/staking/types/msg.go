@@ -30,7 +30,7 @@ type MsgCreateValidator struct {
 	// 验证人自定义的佣金信息
 	Commission        CommissionMsg  `json:"commission"`
 
-	// 验证人自声明的最小自委托
+	// 验证人自声明的最小自委托 (自己设定，且不可更改)
 	MinSelfDelegation sdk.Int        `json:"min_self_delegation"`
 	// 委托人的地址
 	DelegatorAddress  sdk.AccAddress `json:"delegator_address"`

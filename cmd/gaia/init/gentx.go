@@ -125,6 +125,10 @@ following delegation and commission default parameters:
 			// Run gaiad tx create-validator
 			txBldr := authtxb.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			/**
+			创建一个 质押交易的 Msg (创建一个验证人)
+			 */
 			txBldr, msg, err := cli.BuildCreateValidatorMsg(cliCtx, txBldr)
 			if err != nil {
 				return err

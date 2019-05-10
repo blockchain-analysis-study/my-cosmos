@@ -45,6 +45,7 @@ func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 }
 
 // GetTxCmd returns the transaction commands for this module
+// todo 返回所有 Staking 相关tx的 Cmd模块
 func (mc ModuleClient) GetTxCmd() *cobra.Command {
 	stakingTxCmd := &cobra.Command{
 		Use:   types.ModuleName,
@@ -52,10 +53,15 @@ func (mc ModuleClient) GetTxCmd() *cobra.Command {
 	}
 
 	stakingTxCmd.AddCommand(client.PostCommands(
+		// 创建 验证人
 		cli.GetCmdCreateValidator(mc.cdc),
+		// 修改验证人
 		cli.GetCmdEditValidator(mc.cdc),
+		// 委托
 		cli.GetCmdDelegate(mc.cdc),
+		// 重置委托
 		cli.GetCmdRedelegate(mc.storeKey, mc.cdc),
+		// 解除委托
 		cli.GetCmdUnbond(mc.storeKey, mc.cdc),
 	)...)
 

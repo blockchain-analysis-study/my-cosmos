@@ -347,7 +347,7 @@ func (keeper Keeper) AddVote(ctx sdk.Context, proposalID uint64, voterAddr sdk.A
 		Voter:      voterAddr,
 		Option:     option,
 	}
-	// 开始对提案进行投票
+	// 开始对提案进行投票 (注意：这是 覆盖性投票，即 一人只能投一张票)
 	keeper.setVote(ctx, proposalID, voterAddr, vote)
 
 	return nil

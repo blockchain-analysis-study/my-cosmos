@@ -224,15 +224,15 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 		return err.Result()
 	}
 
-	// 设置 验证人的 最小委托金
+	// 设置 验证人的 最小委托金 (自己设定，切不可更改)
 	validator.MinSelfDelegation = msg.MinSelfDelegation
 
 	// 写入DB
-	// 根据验证人addr 写入 validator
+	// 根据验证人addr 写入 validator (addr -> Vinfo)
 	k.SetValidator(ctx, validator)
-	// 根据public key 转换成的 addr 写入 validator
+	// 根据public key 转换成的 addr 写入 validator addr (pubkey -> addr)
 	k.SetValidatorByConsAddr(ctx, validator)
-	// 新的按照权重作为索引的 写入 validator
+	// TODO 新的按照权重作为索引的 写入 validator  ( power -> addr)
 	k.SetNewValidatorByPowerIndex(ctx, validator)
 
 	// call the after-creation hook
@@ -241,13 +241,14 @@ func handleMsgCreateValidator(ctx sdk.Context, msg types.MsgCreateValidator, k k
 	//
 	// ###########  TODO ############# 非常重要的一步
 	//
-	//	初始化新验证者的奖励
+	// 设置全局 keeper 中的 validator
 	//
-	//1、设置了 历史奖励
-	//2、设置了 当前奖励
-	//3、设置了 累计佣金
-	//4、设置了 出块奖励
+	// 1、设置了 【初始的】历史奖励
+	// 2、设置了 【初始的】当前奖励
+	// 3、设置了 【初始的】累计佣金
+	// 4、设置了 【初始的】出块奖励
 	//
+	// 设置 addr -> pubkey
 	k.AfterValidatorCreated(ctx, validator.OperatorAddress)
 
 	// move coins from the msg.Address account to a (self-delegation) delegator account

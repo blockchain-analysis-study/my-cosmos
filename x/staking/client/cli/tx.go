@@ -21,8 +21,8 @@ import (
 // GetCmdCreateValidator implements the create validator command handler.
 // TODO: Add full description
 /**
-TODO 发起质押
-发起创建一个质押交易
+TODO 发起质押 (创建验证人)
+获取 创建一个质押交易的命令行
  */
 func GetCmdCreateValidator(cdc *codec.Codec) *cobra.Command {
 
@@ -40,12 +40,16 @@ func GetCmdCreateValidator(cdc *codec.Codec) *cobra.Command {
 				WithCodec(cdc).
 				WithAccountDecoder(cdc)
 
-			// 创建 质押参数
+			// TODO 创建 质押参数
 			txBldr, msg, err := BuildCreateValidatorMsg(cliCtx, txBldr)
 			if err != nil {
 				return err
 			}
 
+
+			/**
+			TODO 广播当前交易给其他tendermint节点
+			*/
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, true)
 		},
 	}
@@ -69,6 +73,9 @@ func GetCmdCreateValidator(cdc *codec.Codec) *cobra.Command {
 
 // GetCmdEditValidator implements the create edit validator command.
 // TODO: add full description
+/**
+TODO 修改验证人信息
+ */
 func GetCmdEditValidator(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit-validator",
@@ -113,6 +120,9 @@ func GetCmdEditValidator(cdc *codec.Codec) *cobra.Command {
 			msg := staking.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation)
 
 			// build and sign the transaction, then broadcast to Tendermint
+			/**
+			TODO 广播当前交易给其他tendermint节点
+			*/
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
 		},
 	}
@@ -124,6 +134,9 @@ func GetCmdEditValidator(cdc *codec.Codec) *cobra.Command {
 }
 
 // GetCmdDelegate implements the delegate command.
+/**
+TODO 创建一个委托
+ */
 func GetCmdDelegate(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "delegate [validator-addr] [amount]",
@@ -151,12 +164,19 @@ $ gaiacli tx staking delegate cosmosvaloper1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59
 			}
 
 			msg := staking.NewMsgDelegate(delAddr, valAddr, amount)
+
+			/**
+			TODO 广播当前交易给其他tendermint节点
+			*/
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
 		},
 	}
 }
 
 // GetCmdRedelegate the begin redelegation command.
+/**
+TODO 重置委托
+ */
 func GetCmdRedelegate(storeName string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "redelegate [src-validator-addr] [dst-validator-addr] [amount]",
@@ -192,12 +212,19 @@ $ gaiacli tx staking redelegate cosmosvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmq
 			}
 
 			msg := staking.NewMsgBeginRedelegate(delAddr, valSrcAddr, valDstAddr, sharesAmount)
+
+			/**
+			TODO 广播当前交易给其他tendermint节点
+			*/
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
 		},
 	}
 }
 
 // GetCmdUnbond implements the unbond validator command.
+/**
+TODO 解除 委托
+ */
 func GetCmdUnbond(storeName string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "unbond [validator-addr] [amount]",
@@ -226,6 +253,10 @@ $ gaiacli tx staking unbond cosmosvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 			}
 
 			msg := staking.NewMsgUndelegate(delAddr, valAddr, sharesAmount)
+
+			/**
+			TODO 广播当前交易给其他tendermint节点
+			 */
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
 		},
 	}
@@ -234,6 +265,9 @@ $ gaiacli tx staking unbond cosmosvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 // BuildCreateValidatorMsg makes a new MsgCreateValidator.
 /**
 BuildCreateValidatorMsg创建一个新的MsgCreateValidator。
+todo 这个方法两个地方调用
+1、 在 Gaia 的main中 做到注册该Tx的Msg
+2、在Gaiacli的 main中 做到组装该Tx的Msg 给客户端调用发起交易
  */
 func BuildCreateValidatorMsg(cliCtx context.CLIContext, txBldr authtxb.TxBuilder) (authtxb.TxBuilder, sdk.Msg, error) {
 	amounstStr := viper.GetString(FlagAmount)

@@ -475,6 +475,8 @@ func (k Keeper) DequeueAllMatureRedelegationQueue(ctx sdk.Context, currTime time
 // Perform a delegation, set/update everything necessary within the store.
 /**
 执行委托，设置/更新 store 中的所需一切。
+
+这个方法是 自委托 和被委托 都走的
  */
 func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.Int,
 	validator types.Validator, subtractAccount bool) (newShares sdk.Dec, err sdk.Error) {
@@ -483,8 +485,9 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 	// Validator loses all tokens due to slashing. In this case,
 	// make all future delegations invalid.
 	/**
-	在某些情况下，佣金增幅 变为无效 ?
-	例如 如果Validator由于削减而丢失所有令牌。 在这种情况下，使所有未来的代表团无效。
+	如果 validator 身上的 token 为0 但是 委托股权的总份额 大于0
+	(因为可能该 验证人 发生了 slashing)
+	TODO 不可以被委托
 	*/
 	if validator.InvalidExRate() {
 		return sdk.ZeroDec(), types.ErrDelegatorShareExRateInvalid(k.Codespace())
@@ -493,8 +496,7 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 
 
 	// Get or create the delegation object
-	// 获取或者创建一个 委托人实例
-	// 根据委托人地址和验证人地址
+	// 获取一个委托人实例
 	delegation, found := k.GetDelegation(ctx, delAddr, validator.OperatorAddress)
 	if !found {
 		// 如果找不到就创建一个

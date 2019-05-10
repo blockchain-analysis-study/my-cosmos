@@ -470,7 +470,17 @@ func NewStakingHooks(dh distr.Hooks, sh slashing.Hooks) StakingHooks {
 超级重要的 func 集, 都是一些AOP做法的 hook 函数
  */
 func (h StakingHooks) AfterValidatorCreated(ctx sdk.Context, valAddr sdk.ValAddress) {
+	// TODO 初始化一个验证人的各种信息
+	//
+	// 设置全局 keeper 中的 validator
+	//
+	// 1、设置了 历史奖励
+	// 2、设置了 当前奖励
+	// 3、设置了 累计佣金
+	// 4、设置了 出块奖励
 	h.dh.AfterValidatorCreated(ctx, valAddr)
+
+	// 设置 addr -> pubkey
 	h.sh.AfterValidatorCreated(ctx, valAddr)
 }
 func (h StakingHooks) BeforeValidatorModified(ctx sdk.Context, valAddr sdk.ValAddress) {
