@@ -885,7 +885,9 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 
 // EndBlock implements the ABCI interface.
 /**
-TODO 注意这个超级重要 这个函数最终会由 底层的 tendermint 发起 rpc 调用，来向cosmos 获取最新变更的 验证人列表
+测试用的 这个函数最终会由 底层的 tendermint 发起 rpc 调用，来向cosmos 获取最新变更的 验证人列表
+
+最终是调到了  func (app *GaiaApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock
 types.pb.go
  */
 func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBlock) {
@@ -896,8 +898,9 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 	if app.endBlocker != nil {
 
 		/**
-		TODO 调用 每个区块处理最后一般的操作 (cosmos-sdk <-> tendermint 交互)
-		 在这个方法里面会有 更新验证人列表的 逻辑
+		拉取变化的验证人列表
+		TODO  调用 每个区块处理最后一般的操作 (cosmos-sdk <-> tendermint 交互)
+		 在这个方法里面会有 更新验证人列表的 逻辑 (最终调到了 GaiaApp的函数)
 		 */
 		res = app.endBlocker(app.deliverState.ctx, req)
 	}

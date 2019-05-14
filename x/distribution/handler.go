@@ -12,10 +12,22 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		// NOTE msg already has validate basic run
 		switch msg := msg.(type) {
 		case types.MsgSetWithdrawAddress:
+
+			/**
+
+			 */
 			return handleMsgModifyWithdrawAddress(ctx, msg, k)
 		case types.MsgWithdrawDelegatorReward:
+
+			/**
+			提取委托奖励
+			 */
 			return handleMsgWithdrawDelegatorReward(ctx, msg, k)
 		case types.MsgWithdrawValidatorCommission:
+
+			/**
+			提取质押佣金
+			 */
 			return handleMsgWithdrawValidatorCommission(ctx, msg, k)
 		default:
 			return sdk.ErrTxDecode("invalid message parse in distribution module").Result()
@@ -25,6 +37,7 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 
 // These functions assume everything has been authenticated (ValidateBasic passed, and signatures checked)
 
+// 这些函数假设所有内容都已经过身份验证（已通过ValidateBasic，并检查签名）
 func handleMsgModifyWithdrawAddress(ctx sdk.Context, msg types.MsgSetWithdrawAddress, k keeper.Keeper) sdk.Result {
 
 	err := k.SetWithdrawAddr(ctx, msg.DelegatorAddress, msg.WithdrawAddress)

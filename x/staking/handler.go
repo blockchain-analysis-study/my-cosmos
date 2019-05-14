@@ -99,7 +99,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) ([]abci.ValidatorUpdate, sdk.T
 	Bonded  - > Unbonding，
 	然后在UnbondAllMatureValidatorQueue期间取消绑定 - > Unbonded）。
 	 */
-	validatorUpdates := k.ApplyAndReturnValidatorSetUpdates(ctx)  // 这个函数 返回所有有变更的验证人集合
+	validatorUpdates := k.ApplyAndReturnValidatorSetUpdates(ctx)  // TODO 这个函数 返回所有有变更的验证人集合
 
 	// Unbond all mature validators from the unbonding queue.
 	// 解除锁定来自unbonding (需要被解除锁定的)队列的所有成熟验证器。

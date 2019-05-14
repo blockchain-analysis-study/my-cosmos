@@ -9,6 +9,7 @@ import (
 )
 
 // allocate fees handles distribution of the collected fees
+// 处理收取的费用的分配
 func (k Keeper) AllocateTokens(ctx sdk.Context, sumPrecommitPower, totalPower int64, proposer sdk.ConsAddress, votes []abci.VoteInfo) {
 	logger := ctx.Logger().With("module", "x/distribution")
 
@@ -81,6 +82,7 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, sumPrecommitPower, totalPower in
 }
 
 // allocate tokens to a particular validator, splitting according to commission
+// 将 token 钱 分配给特定的验证器，根据佣金进行拆分
 func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val sdk.Validator, tokens sdk.DecCoins) {
 
 	// split tokens between validator and delegators according to commission

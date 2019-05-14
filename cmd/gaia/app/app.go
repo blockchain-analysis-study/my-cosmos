@@ -298,6 +298,8 @@ func MakeCodec() *codec.Codec {
 与 EndBlocker 相呼应
 
 大家写过数据库的底层操作，这个东西应该和它非常类似，不外乎是Begin准备，End结束，清扫资源
+
+TODO 这个由 tendermint 在处理每个块之前 回调cosmos 做的 rpc 交互
  */
 func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	// mint new tokens for the previous block
@@ -326,8 +328,9 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 	}
 }
 
+// tendermint 拉取 cosmos 实时的验证人列表
 // TODO ################
-// TODO 超级重要
+// TODO 超级重要  这个才是由 tendermint 在每个块执行结束时 回调 cosmos 的 rpc交互
 // application updates every end block
 // nolint: unparam
 // 在每个区块执行结束前 调用
