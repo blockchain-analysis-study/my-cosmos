@@ -30,7 +30,15 @@ func init() {
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
 // numbers, checks signatures & account numbers, and deducts fees from the first
 // signer.
+/*
+TODO 重要
+NewAnteHandler
+返回一个AnteHandler，它检查并递增序列号，检查签名和帐号，并从第一个签名者中扣除费用
+*/
 func NewAnteHandler(ak AccountKeeper, fck FeeCollectionKeeper) sdk.AnteHandler {
+	/*
+	TODO 返回一个 执行tx 的 回调函数
+	*/
 	return func(
 		ctx sdk.Context, tx sdk.Tx, simulate bool,
 	) (newCtx sdk.Context, res sdk.Result, abort bool) {

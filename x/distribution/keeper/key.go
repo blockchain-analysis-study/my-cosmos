@@ -39,6 +39,8 @@ var (
 	ParamStoreKeyCommunityTax        = []byte("communitytax")
 	ParamStoreKeyBaseProposerReward  = []byte("baseproposerreward")
 	ParamStoreKeyBonusProposerReward = []byte("bonusproposerreward")
+
+	// 奖励是否可用标识 key?
 	ParamStoreKeyWithdrawAddrEnabled = []byte("withdrawaddrenabled")
 )
 

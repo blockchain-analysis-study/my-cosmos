@@ -30,13 +30,17 @@ type runTxMode uint8
 
 const (
 	// Check a transaction
+	// 检查一个 tx
 	runTxModeCheck runTxMode = iota
 	// Simulate a transaction
+	// 模拟一个 tx
 	runTxModeSimulate runTxMode = iota
 	// Deliver a transaction
+	// 交付一个 tx （真正处理一笔 tx）
 	runTxModeDeliver runTxMode = iota
 
 	// MainStoreKey is the string representation of the main store
+	// MainStoreKey是 主要存储的字符串表示形式 (也就是 key)
 	MainStoreKey = "main"
 )
 
@@ -56,8 +60,13 @@ type BaseApp struct {
 
 	anteHandler    sdk.AnteHandler  // ante handler for fee and auth
 	initChainer    sdk.InitChainer  // initialize state with validators and state blob
+
+	/*
+	这些方法有底层的 tendermint 来发起 rpc 调用的哦
+	*/
 	beginBlocker   sdk.BeginBlocker // logic to run before any txs
 	endBlocker     sdk.EndBlocker   // logic to run after all txs, and to determine valset changes
+
 	addrPeerFilter sdk.PeerFilter   // filter peers by address and port
 	idPeerFilter   sdk.PeerFilter   // filter peers by node ID
 	fauxMerkleMode bool             // if true, IAVL MountStores uses MountStoresDB for simulation speed.
@@ -77,9 +86,12 @@ type BaseApp struct {
 
 	// The minimum gas prices a validator is willing to accept for processing a
 	// transaction. This is mainly used for DoS and spam prevention.
+	//
+	// 验证人 愿意接受处理交易的最低 gas价格。 这主要用于DoS和垃圾邮件预防。
 	minGasPrices sdk.DecCoins
 
 	// flag for sealing options and parameters to a BaseApp
+	// 用于密封BaseApp的选项和参数的标志
 	sealed bool
 }
 
@@ -298,14 +310,16 @@ func (app *BaseApp) storeConsensusParams(consensusParams *abci.ConsensusParams) 
 
 // getMaximumBlockGas gets the maximum gas from the consensus params.
 func (app *BaseApp) getMaximumBlockGas() (maxGas uint64) {
-	if app.consensusParams == nil || app.consensusParams.BlockSize == nil {
+	if app.consensusParams == nil || app.consensusParams.Block == nil {
 		return 0
 	}
-	return uint64(app.consensusParams.BlockSize.MaxGas)
+	return uint64(app.consensusParams.Block.MaxGas)
 }
 
 // ----------------------------------------------------------------------------
 // ABCI
+
+// TODO 下面大部分方法都是 交由 tendermint 发起回调的 rpc 函数
 
 // Info implements the ABCI interface.
 func (app *BaseApp) Info(req abci.RequestInfo) abci.ResponseInfo {
@@ -327,7 +341,7 @@ func (app *BaseApp) SetOption(req abci.RequestSetOption) (res abci.ResponseSetOp
 // InitChain implements the ABCI interface. It runs the initialization logic
 // directly on the CommitMultiStore.
 /**
-TODO 重要的入口
+TODO 重要的入口 交由 tendermint 发起调用
 InitChain实现了ABCI接口。
 它直接在CommitMultiStore上运行初始化逻辑。
 
@@ -534,6 +548,7 @@ func handleQueryCustom(app *BaseApp, path []string, req abci.RequestQuery) (res 
 }
 
 // BeginBlock implements the ABCI application interface.
+// TODO 交由tendermint 发起 rpc调用
 func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeginBlock) {
 	if app.cms.TracingEnabled() {
 		app.cms.SetTracingContext(sdk.TraceContext(
@@ -580,6 +595,7 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 //
 // NOTE:CheckTx does not run the actual Msg handler function(s).
 /**
+TODO 由 tendermint 来调用
 
 CheckTx实现了ABCI接口。
 它运行“基本检查”以查看是否可以执行事务，
@@ -601,6 +617,7 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res abci.ResponseCheckTx) {
 	if err != nil {
 		result = err.Result()
 	} else {
+		// 执行交易检查
 		result = app.runTx(runTxModeCheck, txBytes, tx)
 	}
 
@@ -615,8 +632,10 @@ func (app *BaseApp) CheckTx(txBytes []byte) (res abci.ResponseCheckTx) {
 }
 
 // DeliverTx implements the ABCI interface.
-// TODO 这个才是 处理交易的 函数 ？？
-// 和 BeginBlock 及EndBlock 息息相关
+/*
+TODO 这个才是 处理交易的 函数 （由 底层的tendermint 调用）
+和 BeginBlock 及EndBlock 息息相关
+*/
 func (app *BaseApp) DeliverTx(txBytes []byte) (res abci.ResponseDeliverTx) {
 	var result sdk.Result
 
@@ -624,6 +643,10 @@ func (app *BaseApp) DeliverTx(txBytes []byte) (res abci.ResponseDeliverTx) {
 	if err != nil {
 		result = err.Result()
 	} else {
+		/*
+		TODO 超级主要
+		根据 交易类型 执行交易
+		*/
 		result = app.runTx(runTxModeDeliver, txBytes, tx)
 	}
 
@@ -765,6 +788,10 @@ func (app *BaseApp) cacheTxContext(ctx sdk.Context, txBytes []byte) (
 // anteHandler. The provided txBytes may be nil in some cases, eg. in tests. For
 // further details on transaction execution, reference the BaseApp SDK
 // documentation.
+/*
+TODO 执行交易的总入口
+根据不同的交易类型，执行不同的交易
+*/
 func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk.Result) {
 	// NOTE: GasWanted should be returned by the AnteHandler. GasUsed is
 	// determined by the GasMeter. We need access to the context to get the gas
@@ -840,6 +867,11 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		// performance benefits, but it'll be more difficult to get right.
 		anteCtx, msCache = app.cacheTxContext(ctx, txBytes)
 
+		/*
+		这里才是真正调用执行 tx
+		一般是指： func NewAnteHandler(ak AccountKeeper, fck FeeCollectionKeeper) sdk.AnteHandler 的返回 回调函数
+		sdk.AnteHandler
+		*/
 		newCtx, result, abort := app.anteHandler(anteCtx, tx, (mode == runTxModeSimulate))
 		if !newCtx.IsZero() {
 			// At this point, newCtx.MultiStore() is cache-wrapped, or something else
@@ -885,7 +917,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 
 // EndBlock implements the ABCI interface.
 /**
-测试用的 这个函数最终会由 底层的 tendermint 发起 rpc 调用，来向cosmos 获取最新变更的 验证人列表
+TODO 这个函数最终会由 底层的 tendermint 发起 rpc 调用，来向cosmos 获取最新变更的 验证人列表
 
 最终是调到了  func (app *GaiaApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock
 types.pb.go
@@ -910,6 +942,7 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 
 // Commit implements the ABCI interface.
 /**
+TODO 由底层 tendermint 调用
 TODO 注意因为GaiaApp 继承了 BaseApp 的哦，所以GaiaApp 可以直接调用这个哦
 当处理完成交易后，应该把完成的交易从内存持久化到硬盘上，
 并以上为根据创建返回被下一个Tendermint区块需要的默克尔树的Root哈希值。

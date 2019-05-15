@@ -160,6 +160,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	)
 
 	// distribute 指 发布新币的管理器 ？？
+	// 派发奖励用
 	app.distrKeeper = distr.NewKeeper(
 		app.cdc,
 		app.keyDistr,

@@ -7,6 +7,9 @@ import (
 	"my-cosmos/cosmos-sdk/x/distribution/types"
 )
 
+/*
+派发奖励 用
+*/
 func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		// NOTE msg already has validate basic run
