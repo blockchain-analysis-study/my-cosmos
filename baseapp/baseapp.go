@@ -860,7 +860,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 
 		// Cache wrap context before anteHandler call in case it aborts.
 		// This is required for both CheckTx and DeliverTx.
-		// Ref: https://my-cosmos/cosmos-sdk/issues/2772
+		// Ref: https://github.com/cosmos-sdk/issues/2772
 		//
 		// NOTE: Alternatively, we could require that anteHandler ensures that
 		// writes do not happen if aborted/failed.  This may have some
