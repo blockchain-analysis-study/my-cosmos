@@ -25,6 +25,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) sdk.Ta
 	// 逐个检查 当前块的 commit 信息中的 验证人 签名数 (vote 数)
 	// 为了做惩罚用的
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
+		// 逐个 处理签名
 		sk.handleValidatorSignature(ctx, voteInfo.Validator.Address, voteInfo.Validator.Power, voteInfo.SignedLastBlock)
 	}
 
@@ -33,6 +34,8 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) sdk.Ta
 	// who contributed to valid infractions
 	/**
 	迭代任何关于所有验证人的新发现的违规证据（以及在解绑期间的无staking股权）
+
+	说白了这个就是 双签的证据
 	 */
 	for _, evidence := range req.ByzantineValidators {
 		switch evidence.Type {

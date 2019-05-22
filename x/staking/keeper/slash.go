@@ -21,6 +21,10 @@ import (
 // CONTRACT:
 //    Infraction was committed at the current height or at a past height,
 //    not at a height in the future
+/*
+TODO 惩罚 实施
+
+*/
 func (k Keeper) Slash(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeight int64, power int64, slashFactor sdk.Dec) {
 	logger := ctx.Logger().With("module", "x/staking")
 
@@ -29,9 +33,12 @@ func (k Keeper) Slash(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeigh
 	}
 
 	// Amount of slashing = slash slashFactor * power at time of infraction
+
+	// 计算 惩罚扣减的 金额
+	// 惩罚金额 = 惩罚分数值 * power
 	amount := sdk.TokensFromTendermintPower(power)
-	slashAmountDec := amount.ToDec().Mul(slashFactor)
-	slashAmount := slashAmountDec.TruncateInt()
+	slashAmountDec := amount.ToDec().Mul(slashFactor) // 这个就是 即将被 扣减的钱
+	slashAmount := slashAmountDec.TruncateInt() // 扎差取整
 
 	// ref https://my-cosmos/cosmos-sdk/issues/1348
 
@@ -54,7 +61,7 @@ func (k Keeper) Slash(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeigh
 
 	operatorAddress := validator.GetOperator()
 
-	// call the before-modification hook
+	// call the before-modification hook 这个 staking 的函数还没被实现
 	k.BeforeValidatorModified(ctx, operatorAddress)
 
 	// Track remaining slash amount for the validator
@@ -90,6 +97,7 @@ func (k Keeper) Slash(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeigh
 		}
 
 		// Iterate through redelegations from slashed validator
+		// 通过削减的验证器重新考虑重新授权
 		redelegations := k.GetRedelegationsFromValidator(ctx, operatorAddress)
 		for _, redelegation := range redelegations {
 			amountSlashed := k.slashRedelegation(ctx, validator, redelegation, infractionHeight, slashFactor)
@@ -139,6 +147,7 @@ func (k Keeper) Slash(ctx sdk.Context, consAddr sdk.ConsAddress, infractionHeigh
  */
 func (k Keeper) Jail(ctx sdk.Context, consAddr sdk.ConsAddress) {
 	validator := k.mustGetValidatorByConsAddr(ctx, consAddr)
+	// 做两件事： 更改验证人详情的 jailed字段为 true； 从权重队列中移除ValidatorId
 	k.jailValidator(ctx, validator)
 	logger := ctx.Logger().With("module", "x/staking")
 	logger.Info(fmt.Sprintf("validator %s jailed", consAddr))

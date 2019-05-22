@@ -503,6 +503,9 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 		delegation = types.NewDelegation(delAddr, validator.OperatorAddress, sdk.ZeroDec())
 	}
 
+
+
+
 	// call the appropriate hook if present
 	// 调用对应的钩子函数
 	// 如果找得到，那么是 修改委托
@@ -540,6 +543,9 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 	将本次委托的金额关联到该验证人身上
 
 	TODO 这个方法里 有追加 质押的token 和 追加被委托的股权占比的处理
+
+	先根据 validator 的旧有权重 删掉就权重对应的 validatorId
+	在用新的权重 set进去
 
 	###############
 	###############

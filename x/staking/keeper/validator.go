@@ -148,7 +148,7 @@ func (k Keeper) SetValidatorByPowerIndex(ctx sdk.Context, validator types.Valida
 }
 
 // validator index
-// 删除 对应权重的 验证人
+// TODO 删除 对应权重的 验证人
 func (k Keeper) DeleteValidatorByPowerIndex(ctx sdk.Context, validator types.Validator) {
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(GetValidatorsByPowerIndexKey(validator))
@@ -346,7 +346,7 @@ func (k Keeper) GetLastValidatorPower(ctx sdk.Context, operator sdk.ValAddress) 
 }
 
 // Set the last validator power.
-// 设置 验证人的最新的权重信息
+// TODO 设置 验证人的最新的权重信息
 func (k Keeper) SetLastValidatorPower(ctx sdk.Context, operator sdk.ValAddress, power int64) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshalBinaryLengthPrefixed(power)

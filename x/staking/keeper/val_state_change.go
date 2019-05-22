@@ -46,11 +46,9 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 	// The persistent set is updated later in this function.
 	// (see LastValidatorPowerKey).
 	/**
-	取回(返回) 最新的 验证人集合 (最后一个时间窗口的？)
-	该(持续/固化了的)集合在当前函数之后被更新
-	(参考查看： LastValidatorPowerKey 这个key: 设置 验证人的最新的权重信息)
+	返回上一轮的前N名验证人队列
 	 */
-	// 这是一个 map
+	// 这是一个 map (DB 里面不是存map，只是整理出来组装成了 map)
 	last := k.getLastValidatorsByAddr(ctx)
 
 	// TODO ########################
@@ -76,7 +74,8 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		valAddr := sdk.ValAddress(iterator.Value())
 		validator := k.mustGetValidator(ctx, valAddr)
 
-		// 如果当前验证人属于处在 slash(被惩罚)锁定中，则说明数据有问题了 ... panic
+		// 处于被惩罚中的 验证人是不应该在 权重队列中的
+		//
 		if validator.Jailed {
 			panic("should never retrieve a jailed validator from the power store")
 		}
@@ -92,9 +91,16 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 			break
 		}
 
+
+
+
+
+
 		// apply the appropriate state change if necessary
 		/**
-		必要时应用适当的状态更改
+		TODO 必要时应用适当的状态更改
+
+		TODO  现在就只差 unbonding  unbonded  bond 等几个状态不是很明白了
 		 */
 		switch validator.Status {
 		case sdk.Unbonded:
@@ -107,8 +113,15 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 			panic("unexpected validator status")
 		}
 
+
+
+
+
+
+
+
 		// fetch the old power bytes
-		// 获取所有 旧的权重 bytes
+		// 获取该验证人在上一轮中的 权重值
 		var valAddrBytes [sdk.AddrLen]byte
 		copy(valAddrBytes[:], valAddr[:])
 		oldPowerBytes, found := last[valAddrBytes]
@@ -121,6 +134,8 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		// update the validator set if power has changed
 		// 如果权重又发生改变了，则需要更新 验证人集合
 		// (全部收集到 updates 集合中，最后返回出去)
+		//
+		// TODO 这一步能够确保，出现在上一轮中且在这一轮没有发生 变化的 验证人 在这一轮不会被选中
 		if !found || !bytes.Equal(oldPowerBytes, newPowerBytes) {
 
 			// TODO ########################
@@ -130,7 +145,7 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 			updates = append(updates, validator.ABCIValidatorUpdate())
 
 			// set validator power on lookup index
-			// 设置 验证人的最新的权重信息
+			// TODO 设置 验证人的最新的权重信息
 			k.SetLastValidatorPower(ctx, valAddr, newPower)
 		}
 
@@ -148,7 +163,7 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 	noLongerBonded := sortNoLongerBonded(last)
 
 	// iterate through the sorted no-longer-bonded validators
-	// 遍历不在保留的验证人
+	// TODO 遍历不在保留的验证人 （需要删除掉）
 	for _, valAddrBytes := range noLongerBonded {
 
 		// fetch the validator
@@ -160,16 +175,22 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 
 		// delete from the bonded validator index
 		// 清除掉 该验证人的最新权重信息
+		// TODO 即： 更新最新轮的 N 名验证人队列
 		k.DeleteLastValidatorPower(ctx, sdk.ValAddress(valAddrBytes))
 
 		// update the validator set
+		// TODO
 		// 追加到更改集合 updates中，用于返回出去
+		// (这里为什么还把上轮这些本应该删除的 继续追加到 updates 中,可以确认是追加了个临时将 power置为 0 的validator信息)
+		// (这样纸 确保了在 tendermint 那边选 出块人的时候，不会被选中)
+		// TODO (但是 之前的这些 验证节点还是可以继续参与共识签名， 目的就是为了放置 新的一批节点中有大量的作恶节点)
 		updates = append(updates, validator.ABCIValidatorUpdateZero())
 	}
 
 	// set total power on lookup index if there are any updates
 	// 如果有任何更新，则在查找索引上设置总 权重
 	if len(updates) > 0 {
+		// 貌似 这个只是做个记录用的，没吊用
 		k.SetLastTotalPower(ctx, totalPower)
 	}
 
@@ -218,11 +239,15 @@ func (k Keeper) jailValidator(ctx sdk.Context, validator types.Validator) {
 	}
 	// 将惩罚锁定标识位更改为 true
 	validator.Jailed = true
+
 	k.SetValidator(ctx, validator)
+
+	// TODO 当被惩罚时， 直接移除 权重排序队列
 	k.DeleteValidatorByPowerIndex(ctx, validator)
 }
 
 // remove a validator from jail
+// 解除惩罚锁定
 func (k Keeper) unjailValidator(ctx sdk.Context, validator types.Validator) {
 	if !validator.Jailed {
 		panic(fmt.Sprintf("cannot unjail already unjailed validator, validator: %v\n", validator))
@@ -230,6 +255,7 @@ func (k Keeper) unjailValidator(ctx sdk.Context, validator types.Validator) {
 
 	validator.Jailed = false
 	k.SetValidator(ctx, validator)
+	// 将权重追加回去
 	k.SetValidatorByPowerIndex(ctx, validator)
 }
 
@@ -258,11 +284,14 @@ func (k Keeper) bondValidator(ctx sdk.Context, validator types.Validator) types.
 }
 
 // perform all the store operations for when a validator begins unbonding
+//
+// 执行验证器开始取消绑定时的所有存储操作
 func (k Keeper) beginUnbondingValidator(ctx sdk.Context, validator types.Validator) types.Validator {
 
 	params := k.GetParams(ctx)
 
 	// delete the validator by power index, as the key will change
+	// 删除掉 旧有的权重信息
 	k.DeleteValidatorByPowerIndex(ctx, validator)
 
 	// sanity check
@@ -305,6 +334,7 @@ func (k Keeper) completeUnbondingValidator(ctx sdk.Context, validator types.Vali
 type validatorsByAddr map[[sdk.AddrLen]byte][]byte
 
 // get the last validator set
+//
 func (k Keeper) getLastValidatorsByAddr(ctx sdk.Context) validatorsByAddr {
 	last := make(validatorsByAddr)
 	store := ctx.KVStore(k.storeKey)
@@ -313,7 +343,7 @@ func (k Keeper) getLastValidatorsByAddr(ctx sdk.Context) validatorsByAddr {
 	iterator := sdk.KVStorePrefixIterator(store, LastValidatorPowerKey)
 	defer iterator.Close()
 	// iterate over the last validator set index
-	// 遍历迭代器，组装成 map 返回出去
+	// TODO 遍历迭代器，组装成 map 返回出去
 	for ; iterator.Valid(); iterator.Next() {
 		var valAddr [sdk.AddrLen]byte
 		// extract the validator address from the key (prefix is 1-byte)

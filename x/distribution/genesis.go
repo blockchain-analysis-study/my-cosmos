@@ -8,9 +8,21 @@ import (
 // InitGenesis sets distribution information for genesis
 func InitGenesis(ctx sdk.Context, keeper Keeper, data types.GenesisState) {
 	keeper.SetFeePool(ctx, data.FeePool)
+	/*
+	TODO 设置 分配给验证人的 比率 (奖励)
+	*/
 	keeper.SetCommunityTax(ctx, data.CommunityTax)
+	/*
+	TODO 设置 基础奖励金额标准
+	*/
 	keeper.SetBaseProposerReward(ctx, data.BaseProposerReward)
+	/*
+	TODO 设置 奖金的金额标准
+	*/
 	keeper.SetBonusProposerReward(ctx, data.BonusProposerReward)
+	/*
+	TODO
+	*/
 	keeper.SetWithdrawAddrEnabled(ctx, data.WithdrawAddrEnabled)
 	for _, dwi := range data.DelegatorWithdrawInfos {
 		keeper.SetDelegatorWithdrawAddr(ctx, dwi.DelegatorAddress, dwi.WithdrawAddress)

@@ -68,11 +68,14 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 
 	// Reject evidence if the double-sign is too old
 	// 如果双重标志太旧，则拒绝证据
+	//
+	// 就相当与 comos 只处理比较新的 双签证据
 	if age > k.MaxEvidenceAge(ctx) {
 		logger.Info(fmt.Sprintf("Ignored double sign from %s at height %d, age of %d past max age of %d",
 			pubkey.Address(), infractionHeight, age, k.MaxEvidenceAge(ctx)))
 		return
 	}
+
 
 	// Get validator and signing info
 	// 获取验证者和签名信息
@@ -131,6 +134,7 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	// ABCI, and now received as evidence.
 	// The fraction is passed in to separately to slash unbonding and rebonding delegations.
 	/**
+	TODO 这里去做真正的 惩罚
 	惩罚验证器`power`是由Tendermint提供的验证人的int64权重。
 	此值为validator.Tokens通过ABCI发送给Tendermint，现在作为 凭证被接收。
 	将该分数分别传入以 惩罚未绑定和重新绑定的委托人s。

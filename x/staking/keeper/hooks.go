@@ -48,6 +48,7 @@ func (k Keeper) AfterValidatorBeginUnbonding(ctx sdk.Context, consAddr sdk.ConsA
 }
 
 // BeforeDelegationCreated - call hook if registered
+// 创建新委托详情之前，需要做的事
 func (k Keeper) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	if k.hooks != nil {
 		k.hooks.BeforeDelegationCreated(ctx, delAddr, valAddr)

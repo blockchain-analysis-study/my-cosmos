@@ -8,6 +8,9 @@ import (
 )
 
 // Called every block, process inflation, update validator set
+/*
+TODO 链上治理相关
+*/
 func EndBlocker(ctx sdk.Context, keeper Keeper) sdk.Tags {
 	logger := ctx.Logger().With("module", "x/gov")
 	resTags := sdk.NewTags()
@@ -56,6 +59,8 @@ func EndBlocker(ctx sdk.Context, keeper Keeper) sdk.Tags {
 		// 跟填好获取出 激活的提案信息 (这里是Proposal接口的实现，目前是唯一的实现 TextProposal)
 		activeProposal := keeper.GetProposal(ctx, proposalID)
 
+
+		// TODO 核心方法， 计算治理提案的投票
 		// passes: 是否通过
 		// tallyResults: 计算的结果
 		passes, tallyResults := tally(ctx, keeper, activeProposal)
@@ -81,7 +86,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper) sdk.Tags {
 		// 设置通过的提案信息
 		keeper.SetProposal(ctx, activeProposal)
 
-		// 从 激活队列中一出
+		// 从 激活队列中 移除
 		keeper.RemoveFromActiveProposalQueue(ctx, activeProposal.GetVotingEndTime(), activeProposal.GetProposalID())
 
 		logger.Info(

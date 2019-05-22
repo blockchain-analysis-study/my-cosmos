@@ -58,6 +58,8 @@ func (fck FeeCollectionKeeper) AddCollectedFees(ctx sdk.Context, coins sdk.Coins
 }
 
 // ClearCollectedFees - clear the fee pool
+//
+// 清空社区奖励池的总累计 金额
 func (fck FeeCollectionKeeper) ClearCollectedFees(ctx sdk.Context) {
 	fck.setCollectedFees(ctx, sdk.Coins{})
 }

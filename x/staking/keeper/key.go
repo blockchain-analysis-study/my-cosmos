@@ -22,10 +22,12 @@ var (
 
 	// Last* values are constant during a block.
 	/**
+	TODO 查不出来是哪里 存入DB的 ？？？？？？
 	最新的验证人的权重信息 key前缀
 	 */
 	LastValidatorPowerKey = []byte{0x11} // prefix for each key to a validator index, for bonded validators
 	/**
+	TODO 查不出来是哪里 存入DB的 ？？？？？？
 	最新的验证人 总权重信息 key
 	 */
 	LastTotalPowerKey     = []byte{0x12} // prefix for the total power
@@ -100,7 +102,9 @@ VALUE：验证人的地址（[] byte）
  */
 func GetValidatorsByPowerIndexKey(validator types.Validator) []byte {
 	// NOTE the address doesn't need to be stored because counter bytes must always be different
-	// 注意:不需要存储地址，因为计数器字节必须始终不同 （真的不明白什么含义？）
+	// 注意:不需要存储地址，因为计数器字节必须始终不同
+	//
+	// TODO 根据权重存储验证人的Id
 	return getValidatorPowerRank(validator)
 }
 
@@ -143,7 +147,12 @@ func getValidatorPowerRank(validator types.Validator) []byte {
 	// 所以起 8长度的 []byte
 	tendermintPowerBytes := make([]byte, 8)
 
-	// 使用大字端里存储 token的权重值
+	//  TODO 使用大字端里存储 token的权重值
+	// 这里就是保存权重
+	// 大字端用低内存地址存放高位数字
+	// 如： 0x0010  -> 0x0011 地址 存放 0x8745这个数字的话，为 0x0010 存放 0x87，0x0011 存放 0x45
+	// 地址: 低 -> 高, 0x0010  -> 0x0011
+	// 数值: 高 -> 低, 0x8745
 	binary.BigEndian.PutUint64(tendermintPowerBytes[:], uint64(tendermintPower))
 
 	// 我擦，这写得我不想说话
@@ -160,12 +169,14 @@ func getValidatorPowerRank(validator types.Validator) []byte {
 	// ValidatorsByPowerIndexKey 只有一个元素
 	key[0] = ValidatorsByPowerIndexKey[0]
 
-	// copy填充权重值
+	// copy填充权重值 到 key中
 	copy(key[1:powerBytesLen+1], powerBytes)
 
-	// 这里看不明白，为什么要去 ^值替换自己的原先的值？
+
 	operAddrInvr := cp(validator.OperatorAddress)
 	for i, b := range operAddrInvr {
+		// 这里看不明白，为什么要去 ^值替换自己的原先的值？
+		// TODO 请查看 parseValidatorPowerRankKey() 方法就知道，这么做是为了从 key中 恢复 addr
 		operAddrInvr[i] = ^b
 	}
 

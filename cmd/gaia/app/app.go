@@ -308,6 +308,9 @@ func (app *GaiaApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) ab
 	mint.BeginBlocker(ctx, app.mintKeeper)
 
 	// distribute rewards for the previous block
+	/*
+	TODO  分配前一个区块的奖励
+	*/
 	distr.BeginBlocker(ctx, req, app.distrKeeper)
 
 	// slash anyone who double signed.
@@ -407,6 +410,9 @@ func (app *GaiaApp) initFromGenesisState(ctx sdk.Context, genesisState GenesisSt
 			}
 		}
 
+		/*
+		TODO 获取最新的  验证人队列
+		*/
 		validators = app.stakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	}
 	return validators
@@ -503,6 +509,7 @@ func (h StakingHooks) AfterValidatorBeginUnbonding(ctx sdk.Context, consAddr sdk
 	h.dh.AfterValidatorBeginUnbonding(ctx, consAddr, valAddr)
 	h.sh.AfterValidatorBeginUnbonding(ctx, consAddr, valAddr)
 }
+// 创建委托之前需要做的事
 func (h StakingHooks) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	h.dh.BeforeDelegationCreated(ctx, delAddr, valAddr)
 	h.sh.BeforeDelegationCreated(ctx, delAddr, valAddr)

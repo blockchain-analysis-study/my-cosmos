@@ -30,6 +30,8 @@ func (k Keeper) SetCommunityTax(ctx sdk.Context, percent sdk.Dec) {
 
 // returns the current BaseProposerReward rate from the global param store
 // nolint: errcheck
+//
+// 返回当前的基础奖励
 func (k Keeper) GetBaseProposerReward(ctx sdk.Context) sdk.Dec {
 	var percent sdk.Dec
 	k.paramSpace.Get(ctx, ParamStoreKeyBaseProposerReward, &percent)
