@@ -17,6 +17,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k keeper.Keeper) 
 	// 计算出目标区块（上一个块）的的签名所对应的 validator 的 power
 	var totalPower, sumPrecommitPower int64
 
+	// tendermint 只是把 commit 信息发过来的
 	// 遍历上一个块的commit 的vote
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
 

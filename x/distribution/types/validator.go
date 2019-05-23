@@ -31,7 +31,7 @@ height 是隐含在 存储key中
 type ValidatorHistoricalRewards struct {
 	// 验证人的累积奖励
 	CumulativeRewardRatio sdk.DecCoins `json:"cumulative_reward_ratio"`
-	// 参考计数 (做什么的？？)
+	// 参考计数 (用来做，代表着 上一个周期的 history还没被清算的标识)
 	ReferenceCount        uint16       `json:"reference_count"`
 }
 

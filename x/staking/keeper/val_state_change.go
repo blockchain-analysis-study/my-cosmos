@@ -190,7 +190,7 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 	// set total power on lookup index if there are any updates
 	// 如果有任何更新，则在查找索引上设置总 权重
 	if len(updates) > 0 {
-		// 貌似 这个只是做个记录用的，没吊用
+		// 貌似 这个只是做个记录用的，没吊用 （做数据导出统计用）
 		k.SetLastTotalPower(ctx, totalPower)
 	}
 
@@ -335,6 +335,7 @@ type validatorsByAddr map[[sdk.AddrLen]byte][]byte
 
 // get the last validator set
 //
+// 获取最新的入围 验证人队列 (前 N 名)
 func (k Keeper) getLastValidatorsByAddr(ctx sdk.Context) validatorsByAddr {
 	last := make(validatorsByAddr)
 	store := ctx.KVStore(k.storeKey)

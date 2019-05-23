@@ -512,7 +512,7 @@ func (h StakingHooks) AfterValidatorBeginUnbonding(ctx sdk.Context, consAddr sdk
 // 创建委托之前需要做的事
 func (h StakingHooks) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	h.dh.BeforeDelegationCreated(ctx, delAddr, valAddr)
-	h.sh.BeforeDelegationCreated(ctx, delAddr, valAddr)
+	h.sh.BeforeDelegationCreated(ctx, delAddr, valAddr) // 未实现
 }
 func (h StakingHooks) BeforeDelegationSharesModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	h.dh.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
@@ -524,7 +524,7 @@ func (h StakingHooks) BeforeDelegationRemoved(ctx sdk.Context, delAddr sdk.AccAd
 }
 func (h StakingHooks) AfterDelegationModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	h.dh.AfterDelegationModified(ctx, delAddr, valAddr)
-	h.sh.AfterDelegationModified(ctx, delAddr, valAddr)
+	h.sh.AfterDelegationModified(ctx, delAddr, valAddr) // 未实现
 }
 func (h StakingHooks) BeforeValidatorSlashed(ctx sdk.Context, valAddr sdk.ValAddress, fraction sdk.Dec) {
 	h.dh.BeforeValidatorSlashed(ctx, valAddr, fraction)

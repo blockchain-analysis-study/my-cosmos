@@ -83,6 +83,11 @@ func (h Hooks) AfterValidatorRemoved(ctx sdk.Context, _ sdk.ConsAddress, valAddr
 	// clear current rewards
 	h.k.DeleteValidatorCurrentRewards(ctx, valAddr)
 }
+
+
+/*
+在存储 新建委托人信息之前做的事
+*/
 func (h Hooks) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	// 获取 验证人
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)

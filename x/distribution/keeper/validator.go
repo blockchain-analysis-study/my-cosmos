@@ -12,17 +12,23 @@ import (
 初始化新验证者的奖励
 
 1、设置了 历史奖励
-2、设置了 当前奖励
+2、设置了 当前奖励 （出块/commit的投票奖励 - 佣金
 3、设置了 累计佣金
-4、设置了 出块奖励
+4、设置了 出块/commit的投票奖励
+
+TODO 奖励的发放在: allocation.go 的  AllocateTokensToValidator（） 中
  */
 func (k Keeper) initializeValidator(ctx sdk.Context, val sdk.Validator) {
 	// set initial historical rewards (period 0) with reference count of 1
 	// 设置初始历史奖励（期间0），引用次数为1 [初始的历史奖励为 0]
+	//
+	// History 的 period 从0开始记
 	k.SetValidatorHistoricalRewards(ctx, val.GetOperator(), 0, types.NewValidatorHistoricalRewards(sdk.DecCoins{}, 1))
 
 	// set current rewards (starting at period 1)
 	// 设置当前奖励（从第1期开始） [初始的第一周期奖励为 0]
+	// TODO 注意了，  出块奖励  和  block的commit的投票奖励  在cosmos中是，当前快发放上一个块的奖励的哦
+	// TODO 这里这个当前奖励，指的是，出块/commit的投票奖励 - 佣金比占有的钱
 	k.SetValidatorCurrentRewards(ctx, val.GetOperator(), types.NewValidatorCurrentRewards(sdk.DecCoins{}, 1))
 
 	// set accumulated commission
@@ -30,7 +36,7 @@ func (k Keeper) initializeValidator(ctx sdk.Context, val sdk.Validator) {
 	k.SetValidatorAccumulatedCommission(ctx, val.GetOperator(), types.InitialValidatorAccumulatedCommission())
 
 	// set outstanding rewards
-	// 设定出块的奖励 [初始的出块奖励为 0]
+	// 设定 出块/commit的投票奖励 [初始的出块奖励为 0]
 	k.SetValidatorOutstandingRewards(ctx, val.GetOperator(), sdk.DecCoins{})
 }
 
@@ -40,7 +46,7 @@ func (k Keeper) initializeValidator(ctx sdk.Context, val sdk.Validator) {
 // 这里除了处理 验证人的周期之外，还调整了验证人的出块奖励金额等等
 func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uint64 {
 	// fetch current rewards
-	// 获取验证人当前奖励
+	// 获取验证人当前奖励 (出块/commit的投票奖励 - 佣金) (其实是 上一个块的奖励)
 	rewards := k.GetValidatorCurrentRewards(ctx, val.GetOperator())
 
 	// calculate current ratio
@@ -57,13 +63,13 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 		// 我们改为添加到社区池
 		feePool := k.GetFeePool(ctx)
 
-		// 获取 验证人的优秀奖励
+		// 获取 验证人的 出块/commit的投票奖励
 		outstanding := k.GetValidatorOutstandingRewards(ctx, val.GetOperator())
 
 		// 将 验证人的当前奖励 转到 社区池中
 		feePool.CommunityPool = feePool.CommunityPool.Add(rewards.Rewards)
 
-		// 扣减 验证人的 优秀奖励
+		// TODO 理论上这个值应该就是 等于 累积佣金的值
 		outstanding = outstanding.Sub(rewards.Rewards)
 
 		// 分别更新
@@ -84,18 +90,17 @@ func (k Keeper) incrementValidatorPeriod(ctx sdk.Context, val sdk.Validator) uin
 	historical := k.GetValidatorHistoricalRewards(ctx, val.GetOperator(), rewards.Period-1).CumulativeRewardRatio
 
 	// decrement reference count
-	// 减少参考计数 （我一直想知道 参考计数 是做什么的？）
+	// 减少参考计数 （清算上一个块中的历史奖励标识）
 	k.decrementReferenceCount(ctx, val.GetOperator(), rewards.Period-1)
 
 	// set new historical rewards with reference count of 1
-	// 设置参考计数为1的新历史奖励
-	// 用以前的历史奖励 + 当前奖励
-	// 即：设置新的历史出块奖励
+	//
+	// 设置新的一轮历史奖励
 	k.SetValidatorHistoricalRewards(ctx, val.GetOperator(), rewards.Period, types.NewValidatorHistoricalRewards(historical.Add(current), 1))
 
 	// set current rewards, incrementing period by 1
 	// 设置当前奖励，递增1
-	// 预先设置下一个周期的 奖励, 这里先预置为 空
+	// 预先设置下一个周期的 出块/commit的投票奖励, 这里先预置为 空 (因为这部分奖励是在 下一个块才会被发放的 查看 allocation.go 的 AllocateTokensToValidator() 方法)
 	k.SetValidatorCurrentRewards(ctx, val.GetOperator(), types.NewValidatorCurrentRewards(sdk.DecCoins{}, rewards.Period+1))
 
 	// 返回当前奖励 周期
@@ -121,7 +126,7 @@ func (k Keeper) decrementReferenceCount(ctx sdk.Context, valAddr sdk.ValAddress,
 	if historical.ReferenceCount == 0 {
 		panic("cannot set negative reference count")
 	}
-	// 递减
+	// 递减 (其实这个值最多只会是 1, 能被 -- 那肯定是 1 )
 	historical.ReferenceCount--
 
 	// 如果参考技术 == 0, 则直接删除 历史奖励信息

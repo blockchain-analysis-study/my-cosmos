@@ -181,7 +181,7 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val sdk.Validator, de
 	// coins 为被取整之后的币, remainder 为被取整时所切掉的小数的累加
 	coins, remainder := rewards.TruncateDecimal()
 
-	// 给当前见证人 追加 出块总奖励 (出块奖励 - 委托人的奖励)
+	// 更新 出块/对commit的投票的奖励 (old - delegate—rewards = new)
 	k.SetValidatorOutstandingRewards(ctx, del.GetValidatorAddr(), outstanding.Sub(rewards))
 
 	/**
