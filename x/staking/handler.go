@@ -409,7 +409,7 @@ func handleMsgUndelegate(ctx sdk.Context, msg types.MsgUndelegate, k keeper.Keep
 */
 func handleMsgBeginRedelegate(ctx sdk.Context, msg types.MsgBeginRedelegate, k keeper.Keeper) sdk.Result {
 
-	// 开始重新委托
+	// 开始重新委托  旧的验证人： ValidatorSrcAddress     新的验证人： ValidatorDstAddress
 	completionTime, err := k.BeginRedelegation(ctx, msg.DelegatorAddress, msg.ValidatorSrcAddress,
 		msg.ValidatorDstAddress, msg.SharesAmount)
 	if err != nil {

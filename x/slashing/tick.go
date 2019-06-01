@@ -23,7 +23,7 @@ func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, sk Keeper) sdk.Ta
 	并且 惩罚/取消绑定连续错过太多块的任何块（停机时间削减）
 	 */
 	// 逐个检查 当前块的 commit 信息中的 验证人 签名数 (vote 数)
-	// 为了做惩罚用的
+	// TODO 签名嘛，在被惩罚时也会被用上
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
 		// 逐个 处理签名
 		sk.handleValidatorSignature(ctx, voteInfo.Validator.Address, voteInfo.Validator.Power, voteInfo.SignedLastBlock)

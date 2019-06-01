@@ -11,7 +11,7 @@ import (
 // Pool - tracking bonded and not-bonded token supply of the bond denomination
 // Pool： 用于跟踪锁定及非锁定代币供应
 type Pool struct {
-	// 记录着目前流通的未与验证人绑定的令牌（未绑定或未绑定）
+	// 记录着目前流通的未与验证人绑定的令牌（未绑定或未绑定） (就是那些，减持质押或者减持委托的token)
 	NotBondedTokens sdk.Int `json:"not_bonded_tokens"` // tokens which are not bonded to a validator (unbonded or unbonding)
 	// 目前与验证人绑定的令牌
 	BondedTokens    sdk.Int `json:"bonded_tokens"`     // tokens which are currently bonded to a validator

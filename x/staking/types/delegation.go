@@ -115,35 +115,51 @@ func (d Delegations) String() (out string) {
 // for a single validator in an time-ordered list
 /**
 UnbondingDelegation存储所有单个委托人的无约束债券
-对于时间排序列表中的单个验证器
+某个验证人身上的某个委托人的N次减持信息
  */
 type UnbondingDelegation struct {
 	// 委托人地址
 	DelegatorAddress sdk.AccAddress             `json:"delegator_address"` // delegator
 	// 该委托人所解除委托的 验证人地址
 	ValidatorAddress sdk.ValAddress             `json:"validator_address"` // validator unbonding from operator addr
-	// 所有解除委托的条目信息
+	// 所有【减持】委托的条目信息
 	Entries          []UnbondingDelegationEntry `json:"entries"`           // unbonding delegation entries
 }
 
 // UnbondingDelegationEntry - entry to an UnbondingDelegation
-// 解除委托的条目信息
+/*
+解除委托的条目信息 (减持的条目)
+*/
 type UnbondingDelegationEntry struct {
-	// 解除委托时的块高
+	// 解除(减持)委托时的块高
 	CreationHeight int64     `json:"creation_height"` // height which the unbonding took place
-	// 解除委托时的区块时间戳
+	// 解除(减持)委托时的区块时间戳
 	CompletionTime time.Time `json:"completion_time"` // time at which the unbonding delegation will complete
-	/** TODO  不明白 InitialBalance 和 Balance 的区别 */
+
+
+	/*
+	这个是 发起减持时的钱
+	*/
 	InitialBalance sdk.Int   `json:"initial_balance"` // atoms initially sch eduled to receive at completion
+	/*
+	这个是如果有 惩罚而被削减的话，就是 减持时的钱 - 被惩罚的钱
+	*/
 	Balance        sdk.Int   `json:"balance"`         // atoms to receive at completion
 }
 
 // IsMature - is the current entry mature
+/*
+判断 目标时间 是否不在当前时间之后
+TODO 等于 或者 在当前时间之前
+*/
 func (e UnbondingDelegationEntry) IsMature(currentTime time.Time) bool {
 	return !e.CompletionTime.After(currentTime)
 }
 
 // NewUnbondingDelegation - create a new unbonding delegation object
+/*
+新建 减持条目的结构体，且追加第一个 减持条目单元
+*/
 func NewUnbondingDelegation(delegatorAddr sdk.AccAddress,
 	validatorAddr sdk.ValAddress, creationHeight int64, minTime time.Time,
 	balance sdk.Int) UnbondingDelegation {
@@ -157,6 +173,9 @@ func NewUnbondingDelegation(delegatorAddr sdk.AccAddress,
 }
 
 // NewUnbondingDelegation - create a new unbonding delegation object
+/*
+创建一个 减持条目单元
+*/
 func NewUnbondingDelegationEntry(creationHeight int64, completionTime time.Time,
 	balance sdk.Int) UnbondingDelegationEntry {
 
@@ -169,6 +188,9 @@ func NewUnbondingDelegationEntry(creationHeight int64, completionTime time.Time,
 }
 
 // AddEntry - append entry to the unbonding delegation
+/*
+向该委托的减持条目的结构体中 追加 减持条目单元
+*/
 func (d *UnbondingDelegation) AddEntry(creationHeight int64,
 	minTime time.Time, balance sdk.Int) {
 
@@ -238,6 +260,9 @@ func (ubds UnbondingDelegations) String() (out string) {
 // Redelegation contains the list of a particular delegator's
 // redelegating bonds from a particular source validator to a
 // particular destination validator
+/*
+某个验证人身上的某个委托的重置信息
+*/
 type Redelegation struct {
 	DelegatorAddress    sdk.AccAddress      `json:"delegator_address"`     // delegator
 	ValidatorSrcAddress sdk.ValAddress      `json:"validator_src_address"` // validator redelegation source operator addr
@@ -246,6 +271,9 @@ type Redelegation struct {
 }
 
 // RedelegationEntry - entry to a Redelegation
+/*
+重置委托 条目单元
+*/
 type RedelegationEntry struct {
 	CreationHeight int64     `json:"creation_height"` // height at which the redelegation took place
 	CompletionTime time.Time `json:"completion_time"` // time at which the redelegation will complete

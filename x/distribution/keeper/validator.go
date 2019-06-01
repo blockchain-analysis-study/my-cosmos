@@ -138,6 +138,10 @@ func (k Keeper) decrementReferenceCount(ctx sdk.Context, valAddr sdk.ValAddress,
 	}
 }
 
+
+/*
+TODO 记录惩罚事件
+*/
 func (k Keeper) updateValidatorSlashFraction(ctx sdk.Context, valAddr sdk.ValAddress, fraction sdk.Dec) {
 	if fraction.GT(sdk.OneDec()) {
 		panic("fraction greater than one")
@@ -164,5 +168,9 @@ func (k Keeper) updateValidatorSlashFraction(ctx sdk.Context, valAddr sdk.ValAdd
 	if updatedFraction.LT(sdk.ZeroDec()) {
 		panic("negative slash fraction")
 	}
+
+	/*
+	TODO 记录惩罚事件
+	*/
 	k.SetValidatorSlashEvent(ctx, valAddr, height, types.NewValidatorSlashEvent(endedPeriod, updatedFraction))
 }

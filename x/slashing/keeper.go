@@ -40,17 +40,23 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, vs sdk.ValidatorSet, paramspa
 TODO 惩罚 双签名的验证人
 处理在同一高度签署两个块的验证人
 power：双重签名验证器在违规高峰时的功率
+TODO 注意这个方法不是 校验双签，  而是处理双签
  */
 func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractionHeight int64, timestamp time.Time, power int64) {
 	logger := ctx.Logger().With("module", "x/slashing")
 
 	// calculate the age of the evidence
-	// 计算证据的年龄
+	/*
+	TODO 计算证据的年龄
+	timestamp： 为双签证据中的时间戳
+	*/
 	time := ctx.BlockHeader().Time
-	age := time.Sub(timestamp)
+	age := time.Sub(timestamp) // 这一步就得知，双签发生在距离当前块多远
 
 	// fetch the validator public key
-	// 获取验证人的公钥
+	/*
+	获取验证人的公钥
+	*/
 	consAddr := sdk.ConsAddress(addr)
 	pubkey, err := k.getPubkey(ctx, addr)
 	if err != nil {
@@ -67,9 +73,10 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	}
 
 	// Reject evidence if the double-sign is too old
-	// 如果双重标志太旧，则拒绝证据
-	//
-	// 就相当与 comos 只处理比较新的 双签证据
+	/*
+	如果双重标志太旧，则拒绝证据
+	TODO comos 只处理比较新的 双签证据
+	*/
 	if age > k.MaxEvidenceAge(ctx) {
 		logger.Info(fmt.Sprintf("Ignored double sign from %s at height %d, age of %d past max age of %d",
 			pubkey.Address(), infractionHeight, age, k.MaxEvidenceAge(ctx)))
@@ -78,13 +85,15 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 
 
 	// Get validator and signing info
-	// 获取验证者和签名信息
+	/*
+	获取验证者和签名信息
+	*/
 	validator := k.validatorSet.ValidatorByConsAddr(ctx, consAddr)
 	if validator == nil || validator.GetStatus() == sdk.Unbonded {
 		// Defensive.
 		// Simulation doesn't take unbonding periods into account, and
 		// Tendermint might break this assumption at some point.
-		/**
+		/**设置该验证人的签名信息为 (该验证人已经被移除的标识)
 		防守。
 		模拟不考虑未绑定周期，Tendermint可能会在某些时候打破这种假设。
 		 */
@@ -92,23 +101,30 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	}
 
 	// fetch the validator signing info
-	// 获取验证人的签名信息
+	/*
+	TODO 获取验证人的签名信息
+	*/
 	signInfo, found := k.getValidatorSigningInfo(ctx, consAddr)
 	if !found {
 		panic(fmt.Sprintf("Expected signing info for validator %s but not found", consAddr))
 	}
 
 	// validator is already tombstoned
-	// 验证器已经被墓碑化了
-	//
-	// 就是说： 验证器是否已被逻辑删除（从验证器集中删除）
+	/*
+	TODO 验证人已经被墓碑化了
+	就是说： 验证器是否已被逻辑删除 TODO （从验证器集中删除，就是已经被惩罚过了）
+	TODO 当 验证人 被惩罚过了，那么对应的双签也将被废除
+	*/
 	if signInfo.Tombstoned {
 		logger.Info(fmt.Sprintf("Ignored double sign from %s at height %d, validator already tombstoned", pubkey.Address(), infractionHeight))
 		return
 	}
 
 	// double sign confirmed
-	// 确认了是 双签
+	/*
+	确认了是 双签
+	TODO 可以做惩罚处理了
+	*/
 	logger.Info(fmt.Sprintf("Confirmed double sign from %s at height %d, age of %d", pubkey.Address(), infractionHeight, age))
 
 	// We need to retrieve the stake distribution which signed the block, so we subtract ValidatorUpdateDelay from the evidence height.
@@ -116,16 +132,21 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	// i.e. at the end of the pre-genesis block (none) = at the beginning of the genesis block.
 	// That's fine since this is just used to filter unbonding delegations & redelegations.
 	/**
-	我们需要检索对块进行签名的桩号分布，因此我们从证据高度中减去ValidatorUpdateDelay。
-	请注意，此* * *会导致负“distributionHeight”，最多为
-	 ValidatorUpdateDelay，
-	即在发生前的阻断结束时（无）=在发生阻滞的开始。
-	这很好，因为这只是用来过滤无约束的授权和重新授权。
+	TODO 我们需要对已经签名的block所发放的staking奖励进行回收，
+	因此我们从证据高度中减去ValidatorUpdateDelay。
+	请注意，这个*会*导致负面的“distributionHeight”，
+	最多为 ValidatorUpdateDelay，
+	即在 pre-genesis block 之后，在 genesis block 之前。
+	这很好，因为这只是用来过滤无约束的授权和重新授权。(这句话 啥意思啊??)
+
+	TODO 这里会将发生双签的那个块高的上一个块的奖励 回收
 	 */
 	distributionHeight := infractionHeight - sdk.ValidatorUpdateDelay
 
 	// get the percentage slash penalty fraction
-	// 得到百分比 惩罚分数
+	/*
+	TODO 得到百分比 惩罚分数
+	*/
 	fraction := k.SlashFractionDoubleSign(ctx)
 
 	// Slash validator
@@ -148,13 +169,15 @@ func (k Keeper) handleDoubleSign(ctx sdk.Context, addr crypto.Address, infractio
 	 */
 	if !validator.GetJailed() {
 		/**
-		TODO 进行惩罚锁定
+		TODO 将验证人的 是否 被惩罚标识更改为， 被惩罚
 		 */
 		k.validatorSet.Jail(ctx, consAddr)
 	}
 
 	// Set tombstoned to be true
-	// 设置该验证人的签名信息为 (该验证人已经被移除的标识)
+	/*
+	TODO 设置该验证人的签名信息为 (该验证人已经被移除的标识)
+	*/
 	signInfo.Tombstoned = true
 
 	// Set jailed until to be forever (max time)

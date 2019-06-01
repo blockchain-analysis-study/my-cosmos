@@ -316,6 +316,9 @@ func (k Keeper) GetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, heig
 }
 
 // set slash event for height
+/*
+记录一个惩罚时间
+*/
 func (k Keeper) SetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, height uint64, event types.ValidatorSlashEvent) {
 	store := ctx.KVStore(k.storeKey)
 	b := k.cdc.MustMarshalBinaryLengthPrefixed(event)

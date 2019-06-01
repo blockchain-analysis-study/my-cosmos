@@ -60,7 +60,8 @@ type Validator struct {
 	// 这个貌似和 slash (惩罚机制) 相关的 (入狱？)
 	Jailed                  bool           `json:"jailed"`              // has the validator been jailed from bonded status?
 
-	// 验证器状态（被绑定/解除绑定/未被绑定） [这个主要是 解质押的时候 锁定 三周 用？]
+	// 验证器状态（已锁定/解除锁定中/未锁定） TODO [这个主要是 解质押的时候 锁定 三周 用]
+	// TODO  cosmos 也类似有结算锁定期和犹豫期 ??
 	Status                  sdk.BondStatus `json:"status"`              // validator status (bonded/unbonding/unbonded)
 
 	// 委托代币（包括自我授权）

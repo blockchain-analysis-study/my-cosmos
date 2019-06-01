@@ -516,7 +516,7 @@ func (h StakingHooks) BeforeDelegationCreated(ctx sdk.Context, delAddr sdk.AccAd
 }
 func (h StakingHooks) BeforeDelegationSharesModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	h.dh.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
-	h.sh.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
+	h.sh.BeforeDelegationSharesModified(ctx, delAddr, valAddr) // 未实现
 }
 func (h StakingHooks) BeforeDelegationRemoved(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
 	h.dh.BeforeDelegationRemoved(ctx, delAddr, valAddr)
@@ -527,6 +527,6 @@ func (h StakingHooks) AfterDelegationModified(ctx sdk.Context, delAddr sdk.AccAd
 	h.sh.AfterDelegationModified(ctx, delAddr, valAddr) // 未实现
 }
 func (h StakingHooks) BeforeValidatorSlashed(ctx sdk.Context, valAddr sdk.ValAddress, fraction sdk.Dec) {
-	h.dh.BeforeValidatorSlashed(ctx, valAddr, fraction)
-	h.sh.BeforeValidatorSlashed(ctx, valAddr, fraction)
+	h.dh.BeforeValidatorSlashed(ctx, valAddr, fraction) // TODO 重新计算下一次被惩罚的话应该需要  扣减多少钱
+	h.sh.BeforeValidatorSlashed(ctx, valAddr, fraction) // 未实现
 }

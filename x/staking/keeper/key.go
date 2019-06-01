@@ -53,6 +53,9 @@ var (
 	 */
 	DelegationKey                    = []byte{0x31} // key for a delegation
 	UnbondingDelegationKey           = []byte{0x32} // key for an unbonding-delegation
+	/*
+	单个验证人身上的所有解除委托的委托信息的Key
+	*/
 	UnbondingDelegationByValIndexKey = []byte{0x33} // prefix for each key for an unbonding-delegation, by validator operator
 	RedelegationKey                  = []byte{0x34} // key for a redelegation
 	RedelegationByValSrcIndexKey     = []byte{0x35} // prefix for each key for an redelegation, by source validator operator
@@ -229,8 +232,13 @@ func GetUBDKey(delAddr sdk.AccAddress, valAddr sdk.ValAddress) []byte {
 
 // gets the index-key for an unbonding delegation, stored by validator-index
 // VALUE: none (key rearrangement used)
+/*
+返回某个验证人身上某个解除了委托的委托信息
+
+prefix + val + del -> ubd info 的 key (解除了委托的委托信息的 key)
+*/
 func GetUBDByValIndexKey(delAddr sdk.AccAddress, valAddr sdk.ValAddress) []byte {
-	return append(GetUBDsByValIndexKey(valAddr), delAddr.Bytes()...)
+	return append(GetUBDsByValIndexKey(valAddr), delAddr.Bytes()...)  // 拼接 key，并返回
 }
 
 // rearranges the ValIndexKey to get the UBDKey
@@ -252,6 +260,11 @@ func GetUBDsKey(delAddr sdk.AccAddress) []byte {
 }
 
 // gets the prefix keyspace for the indexes of unbonding delegations for a validator
+/*
+获取某个验证人的下属所有解除委托的信息的  key
+
+prefix + val
+*/
 func GetUBDsByValIndexKey(valAddr sdk.ValAddress) []byte {
 	return append(UnbondingDelegationByValIndexKey, valAddr.Bytes()...)
 }
@@ -266,6 +279,9 @@ func GetUnbondingDelegationTimeKey(timestamp time.Time) []byte {
 
 // gets the key for a redelegation
 // VALUE: staking/types.RedelegationKey
+/*
+组装 重置委托的 key
+*/
 func GetREDKey(delAddr sdk.AccAddress, valSrcAddr, valDstAddr sdk.ValAddress) []byte {
 	key := make([]byte, 1+sdk.AddrLen*3)
 

@@ -139,13 +139,19 @@ func (k Keeper) GetUnbondingDelegation(ctx sdk.Context,
 }
 
 // return all unbonding delegations from a particular validator
+/*
+收集 某个验证人的所有已经解除了委托的委托信息
+*/
 func (k Keeper) GetUnbondingDelegationsFromValidator(ctx sdk.Context, valAddr sdk.ValAddress) (ubds []types.UnbondingDelegation) {
 	store := ctx.KVStore(k.storeKey)
 	iterator := sdk.KVStorePrefixIterator(store, GetUBDsByValIndexKey(valAddr))
 	defer iterator.Close()
 
+	// 遍历返回的所有 ubd 的key
 	for ; iterator.Valid(); iterator.Next() {
+
 		key := GetUBDKeyFromValIndexKey(iterator.Key())
+		// 获取 ubd 详情
 		value := store.Get(key)
 		ubd := types.MustUnmarshalUBD(k.cdc, value)
 		ubds = append(ubds, ubd)
@@ -192,18 +198,24 @@ func (k Keeper) SetUnbondingDelegation(ctx sdk.Context, ubd types.UnbondingDeleg
 }
 
 // remove the unbonding delegation object and associated index
+/*
+清除掉某个验证人身上的某个委托信息
+*/
 func (k Keeper) RemoveUnbondingDelegation(ctx sdk.Context, ubd types.UnbondingDelegation) {
 	store := ctx.KVStore(k.storeKey)
 	key := GetUBDKey(ubd.DelegatorAddress, ubd.ValidatorAddress)
 	store.Delete(key)
+
+	// 清除 prefix + val + del
 	store.Delete(GetUBDByValIndexKey(ubd.DelegatorAddress, ubd.ValidatorAddress))
 }
 
 // SetUnbondingDelegationEntry adds an entry to the unbonding delegation at
 // the given addresses. It creates the unbonding delegation if it does not exist
 /**
-SetUnbondingDelegationEntry在无绑定委托中添加一个条目
-给定的地址。 如果不存在，它会创建无绑定委托
+SetUnbondingDelegationEntry
+
+添加一个 减持委托的条目
  */
 func (k Keeper) SetUnbondingDelegationEntry(ctx sdk.Context,
 	delegatorAddr sdk.AccAddress, validatorAddr sdk.ValAddress,
@@ -211,8 +223,14 @@ func (k Keeper) SetUnbondingDelegationEntry(ctx sdk.Context,
 
 	ubd, found := k.GetUnbondingDelegation(ctx, delegatorAddr, validatorAddr)
 	if found {
+		/*
+		向 减持条目的结构体汇总 追加该委托的 减持条目
+		*/
 		ubd.AddEntry(creationHeight, minTime, balance)
 	} else {
+		/*
+		新建 该委托 的减持条目
+		*/
 		ubd = types.NewUnbondingDelegation(delegatorAddr, validatorAddr, creationHeight, minTime, balance)
 	}
 	k.SetUnbondingDelegation(ctx, ubd)
@@ -256,7 +274,7 @@ func (k Keeper) InsertUBDQueue(ctx sdk.Context, ubd types.UnbondingDelegation,
 }
 
 // Returns all the unbonding queue timeslices from time 0 until endTime
-// 返回从0到endTime的所有非绑定队列时间片
+// 返回从某个时间的 解除委托的申请条目
 func (k Keeper) UBDQueueIterator(ctx sdk.Context, endTime time.Time) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return store.Iterator(UnbondingQueueKey,
@@ -271,7 +289,7 @@ func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context,
 	store := ctx.KVStore(k.storeKey)
 	// gets an iterator for all timeslices from time 0 until the current Blockheader time
 	/**
-	获取从时间0到当前Blockheader时间的所有时间片的迭代器
+	遍历所有某个时间段的 解除委托的时间条目
 	 */
 	unbondingTimesliceIterator := k.UBDQueueIterator(ctx, ctx.BlockHeader().Time)
 	for ; unbondingTimesliceIterator.Valid(); unbondingTimesliceIterator.Next() {
@@ -279,6 +297,10 @@ func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context,
 		value := unbondingTimesliceIterator.Value()
 		k.cdc.MustUnmarshalBinaryLengthPrefixed(value, &timeslice)
 		matureUnbonds = append(matureUnbonds, timeslice...)
+
+		/*
+		删除掉该 解除委托的条目
+		*/
 		store.Delete(unbondingTimesliceIterator.Key())
 	}
 	return matureUnbonds
@@ -350,7 +372,9 @@ func (k Keeper) HasReceivingRedelegation(ctx sdk.Context,
 func (k Keeper) HasMaxRedelegationEntries(ctx sdk.Context,
 	delegatorAddr sdk.AccAddress, validatorSrcAddr,
 	validatorDstAddr sdk.ValAddress) bool {
-
+	/*
+	查询 重置委托的申请记录
+	*/
 	red, found := k.GetRedelegation(ctx, delegatorAddr, validatorSrcAddr, validatorDstAddr)
 	if !found {
 		return false
@@ -567,12 +591,16 @@ func (k Keeper) Delegate(ctx sdk.Context, delAddr sdk.AccAddress, bondAmt sdk.In
 }
 
 // unbond a particular delegation and perform associated store operations
-// 取消一个指定的委托人 和 写入存储中的动作 ？
+/*
+TODO 减持委托
+*/
 func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress,
 	shares sdk.Dec) (amount sdk.Int, err sdk.Error) {
 
 	// check if a delegation object exists in the store
-	// 检查该委托人是否存在 存储中
+	/*
+	检查该委托人是否存在
+	*/
 	delegation, found := k.GetDelegation(ctx, delAddr, valAddr)
 	if !found {
 		return amount, types.ErrNoDelegatorForAddress(k.Codespace())
@@ -588,23 +616,29 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 	k.BeforeDelegationSharesModified(ctx, delAddr, valAddr)
 
 	// ensure that we have enough shares to remove
-	// 确保之前委托的钱不比当前解除委托入参的钱小
-	// 不能导致 多退
+	/*
+	确保之前委托的钱不比当前解除委托入参的钱小
+	不能导致 多退
+	*/
 	if delegation.Shares.LT(shares) {
 		return amount, types.ErrNotEnoughDelegationShares(k.Codespace(), delegation.Shares.String())
 	}
 
 	// get validator
-	// 看看有没有验证人
-	// 验证人都找不到，说明数据有毒啊
-	// 那就不能解除委托
+	/*
+	看看有没有验证人
+	验证人都找不到，说明数据有毒啊
+	那就不能解除委托
+	*/
 	validator, found := k.GetValidator(ctx, valAddr)
 	if !found {
 		return amount, types.ErrNoValidatorFound(k.Codespace())
 	}
 
 	// subtract shares from delegation
-	// 减持委托的 占股份额
+	/*
+	减持委托的 占股份额
+	*/
 	delegation.Shares = delegation.Shares.Sub(shares)
 
 
@@ -623,7 +657,7 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 		validator.ShareTokens(delegation.Shares).TruncateInt().LT(validator.MinSelfDelegation) {
 
 		/**
-		TODO
+		TODO  如果减持 质押时，故意减持导致剩余的钱比最小质押门槛低的话， 需要做 slashing 处理
 		进行 slash 锁定
 		 */
 		k.jailValidator(ctx, validator)
@@ -633,14 +667,17 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 	}
 
 	// remove the delegation
-	// 如果当前委托人的委托的入参的 占股份额为 0, 则需要删除当前委托人信息
+	/*
+	如果当前委托人的委托的入参的 占股份额为 0, 则需要删除当前委托人信息
+	TODO 相当于 完全撤销在该 验证人身上的委托了
+	*/
 	if delegation.Shares.IsZero() {
 		k.RemoveDelegation(ctx, delegation)
 	} else {
 		// 否则设置减持操作之后的当前委托人
 		k.SetDelegation(ctx, delegation)
 		// call the after delegation modification hook
-		// 其实就是：初始化新委托的起始信息
+		// 其实就是：初始化新委托的起始信息 (因为上面在 Before 里面已经清除掉了委托信息了)
 		k.AfterDelegationModified(ctx, delegation.DelegatorAddress, delegation.ValidatorAddress)
 	}
 
@@ -656,7 +693,9 @@ func (k Keeper) unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 	}
 
 
-	// 返回 验证人身上剩余的 token
+	/*
+	返回 验证人身上剩余的 token
+	*/
 	return amount, nil
 }
 
@@ -721,6 +760,9 @@ func (k Keeper) Undelegate(ctx sdk.Context, delAddr sdk.AccAddress,
 	// 更新 全局的Keeper 管理器的信息
 	// 减持当前 sharesAmount 数额的委托金
 	// returnAmount： 验证人身上剩余的 token
+	/*
+	TODO 解除 委托
+	*/
 	returnAmount, err := k.unbond(ctx, delAddr, valAddr, sharesAmount)
 	if err != nil {
 		return completionTime, err
@@ -752,7 +794,7 @@ func (k Keeper) Undelegate(ctx sdk.Context, delAddr sdk.AccAddress,
 	}
 
 
-	//  设置解除委托的条目
+	//  设置 减持委托的条目信息
 	ubd := k.SetUnbondingDelegationEntry(ctx, delAddr,
 		valAddr, height, completionTime, returnAmount)
 
@@ -808,28 +850,41 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress,
 }
 
 // begin unbonding / redelegation; create a redelegation record
-// 开始解除锁定/重新授权; 创建一个重新授权记录
+// 开始解除锁定/重新授权; 创建一个重新授权记录 TODO (重置委托)
+/*
+valSrcAddr： 原来的验证人
+valDstAddr： 新的验证人
+*/
 func (k Keeper) BeginRedelegation(ctx sdk.Context, delAddr sdk.AccAddress,
 	valSrcAddr, valDstAddr sdk.ValAddress, sharesAmount sdk.Dec) (
 	completionTime time.Time, errSdk sdk.Error) {
 
-	// 不允许 新的被委托验证人和 老的被委托验证人是同一人
+	/*
+	不允许 新的被委托验证人和 老的被委托验证人是同一人
+	*/
 	if bytes.Equal(valSrcAddr, valDstAddr) {
 		return time.Time{}, types.ErrSelfRedelegation(k.Codespace())
 	}
 
 	// check if this is a transitive redelegation
-	// 检查 ；如果这是一个传递性的重新授权 (不懂是啥意思)
+	/*
+	检查 ；当前被转移的A 验证人是不是被 别人发起转移的验证人 (如果自己被别人转移钱进来，那么自己就不能被转移钱出去)
+	*/
 	if k.HasReceivingRedelegation(ctx, delAddr, valSrcAddr) {
 		return time.Time{}, types.ErrTransitiveRedelegation(k.Codespace())
 	}
 
-	// redelegation具有最大条目数
+	/*
+	redelegation具有最大条目数 (可以知道，委托人a 从A身上撤销委托转移到 B身上的申请记录是有限的)
+	*/
 	if k.HasMaxRedelegationEntries(ctx, delAddr, valSrcAddr, valDstAddr) {
 		return time.Time{}, types.ErrMaxRedelegationEntries(k.Codespace())
 	}
 
-	// 解除旧有验证人的委托锁定
+	/*
+	TODO 解除旧有验证人的委托锁定
+	返回，验证人身上剩余的 token
+	*/
 	returnAmount, err := k.unbond(ctx, delAddr, valSrcAddr, sharesAmount)
 	if err != nil {
 		return time.Time{}, err
@@ -859,7 +914,7 @@ func (k Keeper) BeginRedelegation(ctx sdk.Context, delAddr sdk.AccAddress,
 		return completionTime, nil
 	}
 
-	// 记录重新委托信息
+	// 记录重置委托信息
 	red := k.SetRedelegationEntry(ctx, delAddr, valSrcAddr, valDstAddr,
 		height, completionTime, returnAmount, sharesAmount, sharesCreated)
 
