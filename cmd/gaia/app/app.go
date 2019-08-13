@@ -112,11 +112,15 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	/**
 	开始构建各种 管理器(keeper)
 	 */
+
+
+	// 提供全局可用的参数存储
 	app.paramsKeeper = params.NewKeeper(app.cdc, app.keyParams, app.tkeyParams)
 
 	// define the accountKeeper
 	// 定义一个账户 管理器
 	// 帐户管理--从KVSTROE抽象
+	// TODO 用于帐户
 	app.accountKeeper = auth.NewAccountKeeper(
 		app.cdc,
 		app.keyAccount,
@@ -127,7 +131,7 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 	// add handlers
 	//添加各种操作——它们都从KVSTORE抽象出来,但是它们的抽象度更高，或者可以认为是accountMapper的更高一层
 
-	// 一个基础的处理类 管理器
+	// 用于在账户之间转移硬币
 	app.bankKeeper = bank.NewBaseKeeper(
 		app.accountKeeper,
 		app.paramsKeeper.Subspace(bank.DefaultParamspace),
@@ -153,13 +157,13 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 		staking.DefaultCodespace,
 	)
 
-	// 这个不知道做什么的，应该是和 tendermint 共识有关 ？
+	// 旨在实现灵活的通胀率，并在市场流动性和货币供应之间取得平衡
 	app.mintKeeper = mint.NewKeeper(app.cdc, app.keyMint,
 		app.paramsKeeper.Subspace(mint.DefaultParamspace),
 		&stakingKeeper, app.feeCollectionKeeper,
 	)
 
-	// distribute 指 发布新币的管理器 ？？
+	// 用于分配保税利益相关者的费用和通货膨胀
 	// 派发奖励用
 	app.distrKeeper = distr.NewKeeper(
 		app.cdc,
@@ -179,6 +183,8 @@ func NewGaiaApp(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest b
 
 	/**
 	这个是 链上治理 管理器
+
+	供受保护的利益相关者提出建议并对其进行投票
 	 */
 	app.govKeeper = gov.NewKeeper(
 		app.cdc,

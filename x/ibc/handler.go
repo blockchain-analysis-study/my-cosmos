@@ -4,6 +4,9 @@ import (
 	sdk "my-cosmos/cosmos-sdk/types"
 )
 
+/*
+用于InterBlockchain通信
+*/
 func NewHandler(ibcm Mapper, ck BankKeeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
