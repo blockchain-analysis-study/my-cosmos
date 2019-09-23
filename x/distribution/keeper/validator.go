@@ -16,7 +16,7 @@ import (
 3、设置了 累计佣金
 4、设置了 出块/commit的投票奖励
 
-TODO 奖励的发放在: allocation.go 的  AllocateTokensToValidator（） 中
+ TODO 奖励的发放在: allocation.go 的  AllocateTokensToValidator（） 中
  */
 func (k Keeper) initializeValidator(ctx sdk.Context, val sdk.Validator) {
 	// set initial historical rewards (period 0) with reference count of 1

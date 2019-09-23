@@ -70,8 +70,8 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, sumPrecommitPower, totalPower in
 	remaining := feesCollected
 	proposerValidator := k.stakingKeeper.ValidatorByConsAddr(ctx, proposer)
 	if proposerValidator != nil {
-		// todo 发配奖励 （出块奖励）
-		k.AllocateTokensToValidator(ctx, proposerValidator, proposerReward)
+		//  todo 发配奖励 （出块奖励）
+		k.AllocateTokensToValidator (ctx, proposerValidator, proposerReward)
 		remaining = remaining.Sub(proposerReward)
 	} else {
 		// proposer can be unknown if say, the unbonding period is 1 block, so
@@ -122,7 +122,11 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, sumPrecommitPower, totalPower in
 }
 
 // allocate tokens to a particular validator, splitting according to commission
+// TODO 超级重要
+// TODO 超级重要
 // TODO 将 token 钱 分配给特定的验证器，根据佣金进行拆分
+// TODO 超级重要
+// TODO 超级重要
 func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val sdk.Validator, tokens sdk.DecCoins) {
 
 	// split tokens between validator and delegators according to commission

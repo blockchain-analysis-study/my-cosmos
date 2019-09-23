@@ -326,6 +326,8 @@ func (k Keeper) SetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, heig
 }
 
 // iterate over slash events between heights, inclusive
+//
+// 遍历高度之间的惩罚事件，包括
 func (k Keeper) IterateValidatorSlashEventsBetween(ctx sdk.Context, val sdk.ValAddress, startingHeight uint64, endingHeight uint64,
 	handler func(height uint64, event types.ValidatorSlashEvent) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)

@@ -47,23 +47,30 @@ func (k Keeper) SetWithdrawAddr(ctx sdk.Context, delegatorAddr sdk.AccAddress, w
 }
 
 // withdraw rewards from a delegation
+// 提取委托奖励
 func (k Keeper) WithdrawDelegationRewards(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) sdk.Error {
+
+	// 查询验证人详情
 	val := k.stakingKeeper.Validator(ctx, valAddr)
 	if val == nil {
 		return types.ErrNoValidatorDistInfo(k.codespace)
 	}
 
+	// 查询委托信息
 	del := k.stakingKeeper.Delegation(ctx, delAddr, valAddr)
 	if del == nil {
 		return types.ErrNoDelegationDistInfo(k.codespace)
 	}
 
 	// withdraw rewards
+	// 提取委托奖励
 	if err := k.withdrawDelegationRewards(ctx, val, del); err != nil {
 		return err
 	}
 
 	// reinitialize the delegation
+	//
+	// 重新初始化委托人信息
 	k.initializeDelegation(ctx, valAddr, delAddr)
 
 	return nil

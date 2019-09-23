@@ -33,12 +33,14 @@ func (k Keeper) initializeDelegation(ctx sdk.Context, val sdk.ValAddress, del sd
 	// 注意：必须截断所以我们不允许撤回比欠款更多的奖励
 	stake := validator.ShareTokensTruncated(delegation.GetShares())
 
-	// 存储 委托的起始信息
+	// TODO 存储 委托的起始信息 包含了 shares 的总占比
+	// 包含了委托的其实时间和所在块高
 	k.SetDelegatorStartingInfo(ctx, val, del, types.NewDelegatorStartingInfo(previousPeriod, stake, uint64(ctx.BlockHeight())))
 }
 
 // calculate the rewards accrued by a delegation between two periods
-// 计算委托人在两个周期间所积累的 奖励
+//
+// 计算委托人在两个周期间所积累的 奖励   stake： 委托人质押的钱
 func (k Keeper) calculateDelegationRewardsBetween(ctx sdk.Context, val sdk.Validator,
 	startingPeriod, endingPeriod uint64, stake sdk.Dec) (rewards sdk.DecCoins) {
 	// sanity check
@@ -58,7 +60,7 @@ func (k Keeper) calculateDelegationRewardsBetween(ctx sdk.Context, val sdk.Valid
 	starting := k.GetValidatorHistoricalRewards(ctx, val.GetOperator(), startingPeriod)
 	ending := k.GetValidatorHistoricalRewards(ctx, val.GetOperator(), endingPeriod)
 
-	// 校验下累积奖励
+	// TODO 校验下累积奖励
 	difference := ending.CumulativeRewardRatio.Sub(starting.CumulativeRewardRatio)
 	if difference.IsAnyNegative() {
 		panic("negative rewards should not be possible")
@@ -82,7 +84,9 @@ func (k Keeper) calculateDelegationRewards(ctx sdk.Context, val sdk.Validator, d
 		return
 	}
 
+	// 发起/增持委托时的周期
 	startingPeriod := startingInfo.PreviousPeriod
+	// 委托的 token 量
 	stake := startingInfo.Stake
 
 	// iterate through slashes and withdraw with calculated staking for sub-intervals
@@ -125,7 +129,7 @@ func (k Keeper) calculateDelegationRewards(ctx sdk.Context, val sdk.Validator, d
 
 
 /**
-撤回当前委托人在本周起获得的奖励，并更新周期为新的一轮周期
+提取当前委托人在本周起获得的奖励，并更新周期为新的一轮周期
  */
 func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val sdk.Validator, del sdk.Delegation) sdk.Error {
 
@@ -169,7 +173,7 @@ func (k Keeper) withdrawDelegationRewards(ctx sdk.Context, val sdk.Validator, de
 	// decrement reference count of starting period
 	// 减少起始期间的参考计数
 	//
-	// 获取与委托人相关的起始信息
+	// TODO 获取与委托人相关的起始信息
 	startingInfo := k.GetDelegatorStartingInfo(ctx, del.GetValidatorAddr(), del.GetDelegatorAddr())
 	// 获取委托人的 previousPeriod
 	startingPeriod := startingInfo.PreviousPeriod
