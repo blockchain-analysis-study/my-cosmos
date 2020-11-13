@@ -31,7 +31,7 @@ TODO 重要的 函数 【验证人更新】
 * 根据更新的权力更新验证者状态。
 * 更新绑定的费用池与未绑定的令牌。
 * 更新相关指数。
-
+todo 选验证人   选举验证人
  */
 func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []abci.ValidatorUpdate) {
 
